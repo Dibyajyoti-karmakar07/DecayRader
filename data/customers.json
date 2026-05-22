@@ -2,560 +2,560 @@
     {
         "customer_id": "CST-001",
         "company_name": "Prakash Steel & Fabrication",
-        "city": "Lucknow",
-        "tier": "Silver",
-        "account_manager": "Sunil Mehta"
+        "city": "Pune",
+        "tier": "Bronze",
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-002",
         "company_name": "Sharma Industrial Supplies",
-        "city": "Pune",
+        "city": "Chennai",
         "tier": "Silver",
-        "account_manager": "Sanjay Reddy"
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-003",
         "company_name": "Gujarat Pipe Works",
-        "city": "Kolkata",
-        "tier": "Gold",
-        "account_manager": "Vijay Singh"
+        "city": "Ahmedabad",
+        "tier": "Bronze",
+        "account_manager": "Anil Sharma"
     },
     {
         "customer_id": "CST-004",
         "company_name": "Mehta Fasteners Ltd",
-        "city": "Mumbai",
+        "city": "Delhi",
         "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-005",
         "company_name": "Rajasthan Valve Industries",
-        "city": "Ahmedabad",
+        "city": "Surat",
         "tier": "Bronze",
-        "account_manager": "Karan Malhotra"
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-006",
         "company_name": "Tata Allied Components",
         "city": "Ahmedabad",
-        "tier": "Silver",
-        "account_manager": "Amit Joshi"
+        "tier": "Gold",
+        "account_manager": "Karan Malhotra"
     },
     {
         "customer_id": "CST-007",
         "company_name": "Bharat Seal & Gasket Co",
-        "city": "Chennai",
-        "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "city": "Surat",
+        "tier": "Bronze",
+        "account_manager": "Sanjay Reddy"
     },
     {
         "customer_id": "CST-008",
         "company_name": "Pune Metal Works",
-        "city": "Mumbai",
-        "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "city": "Chennai",
+        "tier": "Bronze",
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-009",
         "company_name": "Krishna Industrial Traders",
-        "city": "Lucknow",
+        "city": "Kolkata",
         "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-010",
         "company_name": "Vijay Pipe & Fittings",
-        "city": "Pune",
+        "city": "Kolkata",
         "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-011",
         "company_name": "Agarwal Steel Distributors",
-        "city": "Pune",
-        "tier": "Silver",
-        "account_manager": "Anil Sharma"
+        "city": "Kolkata",
+        "tier": "Gold",
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-012",
         "company_name": "Mumbai Flange Corporation",
-        "city": "Pune",
-        "tier": "Bronze",
-        "account_manager": "Sunil Mehta"
+        "city": "Hyderabad",
+        "tier": "Silver",
+        "account_manager": "Karan Malhotra"
     },
     {
         "customer_id": "CST-013",
         "company_name": "Hyderabad Industrial Supplies",
-        "city": "Delhi",
-        "tier": "Bronze",
-        "account_manager": "Rajesh Gupta"
+        "city": "Hyderabad",
+        "tier": "Gold",
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-014",
         "company_name": "Coimbatore Pipe Works",
+        "city": "Kolkata",
+        "tier": "Gold",
+        "account_manager": "Suresh Patel"
+    },
+    {
+        "customer_id": "CST-015",
+        "company_name": "Delhi Fastener House",
         "city": "Ahmedabad",
         "tier": "Gold",
         "account_manager": "Anil Sharma"
     },
     {
-        "customer_id": "CST-015",
-        "company_name": "Delhi Fastener House",
-        "city": "Mumbai",
-        "tier": "Gold",
-        "account_manager": "Amit Joshi"
-    },
-    {
         "customer_id": "CST-016",
         "company_name": "Jaipur Metal Industries",
-        "city": "Kolkata",
-        "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "city": "Ahmedabad",
+        "tier": "Bronze",
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-017",
         "company_name": "Surat Valve & Fitting Co",
-        "city": "Delhi",
-        "tier": "Gold",
+        "city": "Ahmedabad",
+        "tier": "Silver",
         "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-018",
         "company_name": "Nagpur Steel Traders",
         "city": "Hyderabad",
-        "tier": "Bronze",
-        "account_manager": "Sanjay Reddy"
+        "tier": "Silver",
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-019",
         "company_name": "Kolkata Industrial Corp",
-        "city": "Chennai",
-        "tier": "Gold",
-        "account_manager": "Sunil Mehta"
+        "city": "Pune",
+        "tier": "Silver",
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-020",
         "company_name": "Bhopal Pipe & Seal Works",
-        "city": "Surat",
-        "tier": "Bronze",
-        "account_manager": "Amit Joshi"
+        "city": "Mumbai",
+        "tier": "Silver",
+        "account_manager": "Sanjay Reddy"
     },
     {
         "customer_id": "CST-021",
         "company_name": "Chandigarh Fasteners Ltd",
-        "city": "Jaipur",
+        "city": "Lucknow",
         "tier": "Bronze",
-        "account_manager": "Amit Joshi"
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-022",
         "company_name": "Indore Metal Distributors",
-        "city": "Delhi",
-        "tier": "Silver",
+        "city": "Surat",
+        "tier": "Gold",
         "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-023",
         "company_name": "Ludhiana Steel & Pipes",
-        "city": "Chennai",
-        "tier": "Bronze",
-        "account_manager": "Suresh Patel"
+        "city": "Lucknow",
+        "tier": "Gold",
+        "account_manager": "Sanjay Reddy"
     },
     {
         "customer_id": "CST-024",
         "company_name": "Patna Industrial Supplies",
-        "city": "Mumbai",
-        "tier": "Silver",
+        "city": "Delhi",
+        "tier": "Bronze",
         "account_manager": "Sanjay Reddy"
     },
     {
         "customer_id": "CST-025",
         "company_name": "Vadodara Flange Works",
         "city": "Kolkata",
-        "tier": "Silver",
-        "account_manager": "Sanjay Reddy"
+        "tier": "Bronze",
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-026",
         "company_name": "Kochi Pipe & Fittings",
-        "city": "Mumbai",
-        "tier": "Gold",
-        "account_manager": "Pankaj Verma"
+        "city": "Surat",
+        "tier": "Silver",
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-027",
         "company_name": "Vizag Steel Components",
-        "city": "Hyderabad",
-        "tier": "Bronze",
-        "account_manager": "Sanjay Reddy"
+        "city": "Mumbai",
+        "tier": "Gold",
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-028",
         "company_name": "Nashik Valve Industries",
-        "city": "Jaipur",
-        "tier": "Gold",
-        "account_manager": "Pankaj Verma"
+        "city": "Ahmedabad",
+        "tier": "Silver",
+        "account_manager": "Karan Malhotra"
     },
     {
         "customer_id": "CST-029",
         "company_name": "Amritsar Metal Works",
-        "city": "Delhi",
+        "city": "Surat",
         "tier": "Gold",
-        "account_manager": "Sanjay Reddy"
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-030",
         "company_name": "Jodhpur Industrial Traders",
-        "city": "Surat",
-        "tier": "Bronze",
-        "account_manager": "Pankaj Verma"
+        "city": "Jaipur",
+        "tier": "Gold",
+        "account_manager": "Anil Sharma"
     },
     {
         "customer_id": "CST-031",
         "company_name": "Ranchi Fastener Corp",
-        "city": "Jaipur",
+        "city": "Kolkata",
         "tier": "Bronze",
-        "account_manager": "Rajesh Gupta"
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-032",
         "company_name": "Guwahati Pipe Works",
-        "city": "Lucknow",
+        "city": "Kolkata",
         "tier": "Bronze",
-        "account_manager": "Suresh Patel"
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-033",
         "company_name": "Bhubaneswar Steel Supplies",
-        "city": "Mumbai",
-        "tier": "Silver",
-        "account_manager": "Vijay Singh"
+        "city": "Jaipur",
+        "tier": "Gold",
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-034",
         "company_name": "Mangalore Industrial Co",
         "city": "Ahmedabad",
         "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-035",
         "company_name": "Mysore Valve & Gasket Ltd",
-        "city": "Surat",
-        "tier": "Gold",
-        "account_manager": "Rajesh Gupta"
+        "city": "Hyderabad",
+        "tier": "Silver",
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-036",
         "company_name": "Trichy Pipe Corporation",
-        "city": "Jaipur",
-        "tier": "Gold",
-        "account_manager": "Karan Malhotra"
+        "city": "Delhi",
+        "tier": "Silver",
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-037",
         "company_name": "Madurai Metal Industries",
-        "city": "Lucknow",
+        "city": "Ahmedabad",
         "tier": "Silver",
         "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-038",
         "company_name": "Agra Steel Distributors",
-        "city": "Delhi",
-        "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "city": "Mumbai",
+        "tier": "Gold",
+        "account_manager": "Anil Sharma"
     },
     {
         "customer_id": "CST-039",
         "company_name": "Meerut Fastener Works",
-        "city": "Chennai",
-        "tier": "Gold",
-        "account_manager": "Pankaj Verma"
+        "city": "Pune",
+        "tier": "Bronze",
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-040",
         "company_name": "Kanpur Industrial Supplies",
-        "city": "Pune",
-        "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "city": "Mumbai",
+        "tier": "Bronze",
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-041",
         "company_name": "Allahabad Pipe & Fittings",
-        "city": "Lucknow",
-        "tier": "Silver",
-        "account_manager": "Amit Joshi"
+        "city": "Delhi",
+        "tier": "Gold",
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-042",
         "company_name": "Varanasi Metal Corp",
-        "city": "Chennai",
+        "city": "Surat",
         "tier": "Silver",
-        "account_manager": "Karan Malhotra"
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-043",
         "company_name": "Srinagar Industrial Traders",
-        "city": "Chennai",
-        "tier": "Gold",
-        "account_manager": "Rajesh Gupta"
+        "city": "Surat",
+        "tier": "Bronze",
+        "account_manager": "Anil Sharma"
     },
     {
         "customer_id": "CST-044",
         "company_name": "Dehradun Steel Works",
-        "city": "Kolkata",
-        "tier": "Bronze",
-        "account_manager": "Pankaj Verma"
+        "city": "Jaipur",
+        "tier": "Gold",
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-045",
         "company_name": "Raipur Pipe & Valve Co",
-        "city": "Pune",
-        "tier": "Gold",
-        "account_manager": "Karan Malhotra"
+        "city": "Kolkata",
+        "tier": "Silver",
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-046",
         "company_name": "Jabalpur Fasteners Ltd",
-        "city": "Kolkata",
-        "tier": "Bronze",
-        "account_manager": "Rajesh Gupta"
+        "city": "Mumbai",
+        "tier": "Gold",
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-047",
         "company_name": "Gwalior Metal Industries",
         "city": "Kolkata",
         "tier": "Gold",
-        "account_manager": "Suresh Patel"
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-048",
         "company_name": "Ujjain Steel Distributors",
-        "city": "Hyderabad",
+        "city": "Surat",
         "tier": "Bronze",
-        "account_manager": "Pankaj Verma"
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-049",
         "company_name": "Aurangabad Pipe Works",
-        "city": "Lucknow",
+        "city": "Chennai",
         "tier": "Gold",
-        "account_manager": "Rajesh Gupta"
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-050",
         "company_name": "Solapur Industrial Supplies",
-        "city": "Lucknow",
-        "tier": "Gold",
-        "account_manager": "Amit Joshi"
+        "city": "Chennai",
+        "tier": "Bronze",
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-051",
         "company_name": "Kolhapur Valve Corp",
-        "city": "Lucknow",
-        "tier": "Bronze",
-        "account_manager": "Karan Malhotra"
+        "city": "Jaipur",
+        "tier": "Gold",
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-052",
         "company_name": "Rajkot Flange Industries",
-        "city": "Pune",
-        "tier": "Silver",
-        "account_manager": "Sunil Mehta"
+        "city": "Chennai",
+        "tier": "Bronze",
+        "account_manager": "Rajesh Gupta"
     },
     {
         "customer_id": "CST-053",
         "company_name": "Bhavnagar Steel Traders",
         "city": "Lucknow",
         "tier": "Gold",
-        "account_manager": "Anil Sharma"
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-054",
         "company_name": "Jamnagar Pipe & Seal Co",
-        "city": "Surat",
+        "city": "Pune",
         "tier": "Silver",
-        "account_manager": "Vijay Singh"
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-055",
         "company_name": "Anand Metal Works",
-        "city": "Ahmedabad",
-        "tier": "Gold",
-        "account_manager": "Anil Sharma"
+        "city": "Mumbai",
+        "tier": "Bronze",
+        "account_manager": "Rajesh Gupta"
     },
     {
         "customer_id": "CST-056",
         "company_name": "Gandhinagar Industrial Corp",
-        "city": "Lucknow",
+        "city": "Jaipur",
         "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-057",
         "company_name": "Siliguri Fastener Works",
-        "city": "Pune",
-        "tier": "Gold",
-        "account_manager": "Karan Malhotra"
+        "city": "Kolkata",
+        "tier": "Silver",
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-058",
         "company_name": "Durgapur Steel Supplies",
-        "city": "Ahmedabad",
+        "city": "Surat",
         "tier": "Gold",
-        "account_manager": "Karan Malhotra"
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-059",
         "company_name": "Asansol Pipe Industries",
-        "city": "Ahmedabad",
-        "tier": "Silver",
-        "account_manager": "Pankaj Verma"
+        "city": "Mumbai",
+        "tier": "Gold",
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-060",
         "company_name": "Howrah Metal Distributors",
-        "city": "Delhi",
+        "city": "Mumbai",
         "tier": "Gold",
-        "account_manager": "Pankaj Verma"
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-061",
         "company_name": "Tirupur Industrial Traders",
-        "city": "Pune",
+        "city": "Jaipur",
         "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "account_manager": "Karan Malhotra"
     },
     {
         "customer_id": "CST-062",
         "company_name": "Salem Valve & Fitting Co",
-        "city": "Lucknow",
-        "tier": "Bronze",
+        "city": "Delhi",
+        "tier": "Gold",
         "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-063",
         "company_name": "Erode Steel Works",
-        "city": "Ahmedabad",
-        "tier": "Bronze",
-        "account_manager": "Amit Joshi"
+        "city": "Surat",
+        "tier": "Silver",
+        "account_manager": "Sanjay Reddy"
     },
     {
         "customer_id": "CST-064",
         "company_name": "Vellore Pipe Corporation",
-        "city": "Pune",
-        "tier": "Silver",
-        "account_manager": "Vijay Singh"
+        "city": "Ahmedabad",
+        "tier": "Bronze",
+        "account_manager": "Pankaj Verma"
     },
     {
         "customer_id": "CST-065",
         "company_name": "Guntur Fasteners Ltd",
-        "city": "Delhi",
-        "tier": "Bronze",
-        "account_manager": "Karan Malhotra"
+        "city": "Lucknow",
+        "tier": "Gold",
+        "account_manager": "Vijay Singh"
     },
     {
         "customer_id": "CST-066",
         "company_name": "Kakinada Industrial Supplies",
-        "city": "Lucknow",
-        "tier": "Silver",
-        "account_manager": "Anil Sharma"
+        "city": "Hyderabad",
+        "tier": "Gold",
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-067",
         "company_name": "Nellore Metal Corp",
-        "city": "Jaipur",
-        "tier": "Bronze",
+        "city": "Ahmedabad",
+        "tier": "Silver",
         "account_manager": "Karan Malhotra"
     },
     {
         "customer_id": "CST-068",
         "company_name": "Warangal Steel Distributors",
-        "city": "Pune",
+        "city": "Surat",
         "tier": "Gold",
-        "account_manager": "Anil Sharma"
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-069",
         "company_name": "Hubli Pipe & Fittings",
-        "city": "Hyderabad",
+        "city": "Kolkata",
         "tier": "Gold",
-        "account_manager": "Anil Sharma"
+        "account_manager": "Suresh Patel"
     },
     {
         "customer_id": "CST-070",
         "company_name": "Belgaum Industrial Works",
-        "city": "Ahmedabad",
-        "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "city": "Chennai",
+        "tier": "Silver",
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-071",
         "company_name": "Shimoga Valve Industries",
         "city": "Ahmedabad",
-        "tier": "Bronze",
-        "account_manager": "Karan Malhotra"
+        "tier": "Gold",
+        "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-072",
         "company_name": "Tumkur Metal Traders",
-        "city": "Kolkata",
-        "tier": "Gold",
-        "account_manager": "Karan Malhotra"
+        "city": "Pune",
+        "tier": "Silver",
+        "account_manager": "Ravi Kumar"
     },
     {
         "customer_id": "CST-073",
         "company_name": "Thrissur Pipe Works",
-        "city": "Pune",
-        "tier": "Silver",
-        "account_manager": "Amit Joshi"
-    },
-    {
-        "customer_id": "CST-074",
-        "company_name": "Kozhikode Industrial Corp",
-        "city": "Pune",
+        "city": "Delhi",
         "tier": "Bronze",
         "account_manager": "Sanjay Reddy"
     },
     {
+        "customer_id": "CST-074",
+        "company_name": "Kozhikode Industrial Corp",
+        "city": "Mumbai",
+        "tier": "Silver",
+        "account_manager": "Pankaj Verma"
+    },
+    {
         "customer_id": "CST-075",
         "company_name": "Kollam Fastener Supplies",
-        "city": "Hyderabad",
+        "city": "Chennai",
         "tier": "Silver",
-        "account_manager": "Ravi Kumar"
+        "account_manager": "Anil Sharma"
     },
     {
         "customer_id": "CST-076",
         "company_name": "Ajmer Steel & Fabrication",
         "city": "Delhi",
-        "tier": "Bronze",
-        "account_manager": "Pankaj Verma"
+        "tier": "Silver",
+        "account_manager": "Sunil Mehta"
     },
     {
         "customer_id": "CST-077",
         "company_name": "Bikaner Pipe Works",
-        "city": "Hyderabad",
+        "city": "Lucknow",
         "tier": "Bronze",
-        "account_manager": "Vijay Singh"
+        "account_manager": "Karan Malhotra"
     },
     {
         "customer_id": "CST-078",
         "company_name": "Udaipur Valve Industries",
-        "city": "Mumbai",
+        "city": "Chennai",
         "tier": "Bronze",
-        "account_manager": "Amit Joshi"
+        "account_manager": "Sanjay Reddy"
     },
     {
         "customer_id": "CST-079",
         "company_name": "Kota Industrial Supplies",
-        "city": "Mumbai",
-        "tier": "Bronze",
+        "city": "Ahmedabad",
+        "tier": "Silver",
         "account_manager": "Amit Joshi"
     },
     {
         "customer_id": "CST-080",
         "company_name": "Aligarh Metal Distributors",
-        "city": "Jaipur",
+        "city": "Pune",
         "tier": "Gold",
         "account_manager": "Pankaj Verma"
     }

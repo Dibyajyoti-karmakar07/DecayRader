@@ -100,6 +100,19 @@ managers = ["Ravi Kumar", "Suresh Patel", "Anil Sharma", "Vijay Singh", "Rajesh 
 #possible products for synthetic sales data generation
 products = ["Steel Pipes", "Valves", "Flanges", "Fasteners", "Gaskets"]
 
+#15 customers chosen to have decay patterns planted   
+decaying_customers = [
+    "CST-042",  # Prakash Steel - hero demo customer
+    "CST-007", "CST-015", "CST-021", "CST-033",
+    "CST-048", "CST-055", "CST-062", "CST-068",
+    "CST-011", "CST-024", "CST-037", "CST-051",
+    "CST-071", "CST-078"
+]
+
+#Month 9 cutoff - decay starts after this day 
+decay_start = datetime.date(2023, 10, 1)
+
+
 #----Step-2: Build 80 customer profiles----
 
 #empty bucket to hold generated synthetic customer data
@@ -129,15 +142,33 @@ start_date = datetime.date(2023, 1, 1)
 
 orders = []
 
+#--step-4: Generate synthetic sales data---
+
 
 for customer in customers:
     for j in range(40):  # Generate a total of 40 orders for the customers
+
+        #generate order date first so we can check if it's before/after decay start
+        order_date = start_date + datetime.timedelta(days=random.randint(0, 540))  
+
+        #check if this customer is decaying AND order is after Month 9
+        if customer["customer_id"] in decaying_customers and order_date >= decay_start:
+           #decayed behaviour -less frequent,less spend, fewer products
+           amount = round(random.uniform(1000, 40000), 2)
+           order_products = random.sample(products, k=random.randint(1, 2))# Randomly select 1 to 2 products for decaying customers
+
+        else:
+              #normal behaviour - more frequent, higher spend, more products
+              amount = round(random.uniform(1000, 100000), 2)
+              order_products = random.sample(products, k=random.randint(3, 5))  # Randomly select 3 to 5 products for normal customers
+
+
         order = {
-            "order_id": f"ORD-{str(len(orders)+1).zfill(3)}",  # Generate a new unique order ID
-            "customer_id": customer["customer_id"],             # Associate the order with the current customer's ID
-            "order_date": (start_date + datetime.timedelta(days=random.randint(0, 540))).strftime("%Y-%m-%d"),
-            "order_amount": round(random.uniform(1000, 100000), 2),  # Random order amount between 1000 and 100000
-            "products": random.sample(products, k=random.randint(2, 4))  # Randomly select 2 to 4 products for the order
+            "order_id": f"ORD-{str(len(orders)+1).zfill(5)}",
+            "customer_id": customer["customer_id"],
+            "order_date": order_date.strftime("%Y-%m-%d"),
+            "order_amount": amount,
+            "products": order_products
         }
 
         orders.append(order)
@@ -146,6 +177,7 @@ with open("data/orders.json", "w") as f:
     json.dump(orders, f, indent=4)  # Save the generated synthetic sales data to a JSON file with pretty printing
 
 print("orders.json created!")    
+
 
 
 
