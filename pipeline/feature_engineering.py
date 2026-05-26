@@ -1,104 +1,311 @@
-import pandas as pd
-# pyrefly: ignore [missing-import]
-import numpy as np
-from pymongo import MongoClient
-from dotenv import load_dotenv
 import os
+import certifi
+import logging
+import numpy as np
+import pandas as pd
 
-# load the .env file
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+
+# =========================================================
+# LOGGING CONFIG
+# =========================================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+
+# =========================================================
+# LOAD ENV VARIABLES
+# =========================================================
+
 load_dotenv()
 
-# connect to MongoDB Atlas
-client = MongoClient(os.getenv("MONGODB_URI"))
+MONGO_URI = os.getenv("MONGODB_URI")
 
-# select the database — must match exactly what's in Atlas
-db = client["DecayRader"]
+if not MONGO_URI:
+    raise ValueError("MONGODB_URI not found in .env file")
 
-# read Orders collection into a pandas DataFrame
-# db["Orders"].find() returns all documents
-# list() converts it to a Python list
-# pd.DataFrame() converts that list into a table
-orders_df = pd.DataFrame(list(db["Orders"].find()))
+# =========================================================
+# CONNECT TO MONGODB
+# =========================================================
 
-# read Customers collection into a pandas DataFrame
-customers_df = pd.DataFrame(list(db["Customers"].find()))
+def connect_to_mongodb():
 
-print(f"Loaded {len(orders_df)} orders")
-print(f"Loaded {len(customers_df)} customers")
+    logging.info("Connecting to MongoDB Atlas...")
 
-#Sort orders by customer_id and order_date to ensure correct sequence for feature engineering
-# convert order_date from string to datetime
-orders_df["order_date"] = pd.to_datetime(orders_df["order_date"])
- 
-#Calculate days since previous order for each customer
-orders_df["days_since_prev_order"] = orders_df.groupby("customer_id")["order_date"].diff().dt.days
+    try:
+        client = MongoClient(
+            MONGO_URI,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=5000
+        )
 
+        client.admin.command("ping")
 
-#define cutoff date same as decay start date to split data into baseline and recent periods
-cutoff_date = pd.Timestamp("2023-10-01")
+        logging.info("Connected to MongoDB Atlas successfully!")
 
-#baseline orders - first 9 months of data
-baseline_df = orders_df[orders_df["order_date"] < cutoff_date]
+        return client
 
-#recent orders - last 9 months of data
-recent_df = orders_df[orders_df["order_date"] >= cutoff_date]
+    except Exception as e:
+        logging.error("MongoDB connection failed!")
+        logging.error(e)
+        raise
 
 
-print(f"Baseline period: {len(baseline_df)} orders")
-print(f"Recent period: {len(recent_df)} orders")
+# =========================================================
+# LOAD DATA FROM MONGODB
+# =========================================================
+
+def load_data(db):
+
+    collections = db.list_collection_names()
+
+    logging.info(f"Available collections: {collections}")
+
+    required_collections = ["Orders", "Customers"]
+
+    for collection in required_collections:
+        if collection not in collections:
+            raise ValueError(f"{collection} collection not found!")
+
+    logging.info("Loading Orders collection...")
+    orders_data = list(db["Orders"].find())
+
+    logging.info("Loading Customers collection...")
+    customers_data = list(db["Customers"].find())
+
+    orders_df = pd.DataFrame(orders_data)
+    customers_df = pd.DataFrame(customers_data)
+
+    logging.info(f"Loaded {len(orders_df)} orders")
+    logging.info(f"Loaded {len(customers_df)} customers")
+
+    return orders_df, customers_df
 
 
-#Calculate average days between orders for customers in baseline and recent periods
-baseline_gap = baseline_df.groupby("customer_id")["days_since_prev_order"].mean()
-recent_gap = recent_df.groupby("customer_id")["days_since_prev_order"].mean()
+# =========================================================
+# VALIDATE ORDERS DATA
+# =========================================================
+
+def validate_orders_data(orders_df):
+
+    required_columns = [
+        "customer_id",
+        "order_date",
+        "order_amount",
+        "products"
+    ]
+
+    for column in required_columns:
+        if column not in orders_df.columns:
+            raise ValueError(f"Missing required column: {column}")
+
+    logging.info("Orders data validation successful!")
 
 
-#calclulate % change in order frequency
-gap_change_pct =(((recent_gap - baseline_gap) / baseline_gap) * 100).round(2)
+# =========================================================
+# FEATURE ENGINEERING
+# =========================================================
+
+def engineer_features(orders_df):
+
+    logging.info("Starting feature engineering...")
+
+    # -----------------------------------------
+    # CLEANING
+    # -----------------------------------------
+
+    orders_df["order_date"] = pd.to_datetime(
+        orders_df["order_date"],
+        errors="coerce"
+    )
+
+    orders_df = orders_df.dropna(subset=["order_date"])
+
+    orders_df = orders_df.sort_values(
+        by=["customer_id", "order_date"]
+    )
+
+    # -----------------------------------------
+    # DAYS SINCE PREVIOUS ORDER
+    # -----------------------------------------
+
+    orders_df["days_since_prev_order"] = (
+        orders_df
+        .groupby("customer_id")["order_date"]
+        .diff()
+        .dt.days
+    )
+
+    # -----------------------------------------
+    # SPLIT BASELINE VS RECENT
+    # -----------------------------------------
+
+    cutoff_date = pd.Timestamp("2023-10-01")
+
+    baseline_df = orders_df[
+        orders_df["order_date"] < cutoff_date
+    ]
+
+    recent_df = orders_df[
+        orders_df["order_date"] >= cutoff_date
+    ]
+
+    logging.info(f"Baseline orders: {len(baseline_df)}")
+    logging.info(f"Recent orders: {len(recent_df)}")
+
+    # -----------------------------------------
+    # FEATURE 1:
+    # ORDER FREQUENCY CHANGE
+    # -----------------------------------------
+
+    baseline_gap = (
+        baseline_df
+        .groupby("customer_id")["days_since_prev_order"]
+        .mean()
+    )
+
+    recent_gap = (
+        recent_df
+        .groupby("customer_id")["days_since_prev_order"]
+        .mean()
+    )
+
+    gap_change_pct = (
+        (
+            (recent_gap - baseline_gap)
+            /
+            baseline_gap.replace(0, np.nan)
+        ) * 100
+    ).round(2)
+
+    # -----------------------------------------
+    # FEATURE 2:
+    # AVERAGE ORDER VALUE CHANGE
+    # -----------------------------------------
+
+    baseline_spend = (
+        baseline_df
+        .groupby("customer_id")["order_amount"]
+        .mean()
+    )
+
+    recent_spend = (
+        recent_df
+        .groupby("customer_id")["order_amount"]
+        .mean()
+    )
+
+    aov_change_pct = (
+        (
+            (recent_spend - baseline_spend)
+            /
+            baseline_spend.replace(0, np.nan)
+        ) * 100
+    ).round(2)
+
+    # -----------------------------------------
+    # FEATURE 3:
+    # PRODUCT DIVERSITY CHANGE
+    # -----------------------------------------
+
+    baseline_diversity = (
+        baseline_df
+        .groupby("customer_id")["products"]
+        .apply(
+            lambda x: x.apply(
+                lambda p: len(p) if isinstance(p, list) else 0
+            ).mean()
+        )
+    )
+
+    recent_diversity = (
+        recent_df
+        .groupby("customer_id")["products"]
+        .apply(
+            lambda x: x.apply(
+                lambda p: len(p) if isinstance(p, list) else 0
+            ).mean()
+        )
+    )
+
+    diversity_delta = (
+        recent_diversity - baseline_diversity
+    ).round(2)
+
+    # -----------------------------------------
+    # COMBINE FEATURES
+    # -----------------------------------------
+
+    features_df = pd.DataFrame({
+        "gap_change_pct": gap_change_pct,
+        "aov_change_pct": aov_change_pct,
+        "diversity_delta": diversity_delta
+    }).reset_index()
+
+    features_df = features_df.fillna(0)
+
+    logging.info("Feature engineering completed!")
+
+    return features_df
 
 
-print(gap_change_pct.sort_values(ascending=False).head(10))
+# =========================================================
+# SAVE FEATURES TO MONGODB
+# =========================================================
+
+def save_features(db, features_df):
+
+    logging.info("Saving features to MongoDB...")
+
+    features_records = features_df.to_dict("records")
+
+    if len(features_records) == 0:
+        logging.warning("No feature records to save!")
+        return
+
+    # Hackathon prototype approach
+    db["features"].drop()
+
+    db["features"].insert_many(features_records)
+
+    logging.info(
+        f"Saved {len(features_records)} feature records!"
+    )
 
 
-#Calculate the average amount per customer in baseline and recent periods
-baseline_spend = baseline_df.groupby("customer_id")["order_amount"].mean()
-recent_spend = recent_df.groupby("customer_id")["order_amount"].mean()
+# =========================================================
+# MAIN PIPELINE
+# =========================================================
 
-#calculate average order amount per customer
-aov_change_pct = ( (recent_spend - baseline_spend) / baseline_spend * 100).round(2)
+def main():
 
-print(aov_change_pct.sort_values(ascending=True).head(10))
+    client = connect_to_mongodb()
 
+    # CHANGE DB NAME IF NEEDED
+    db = client["DecayRader"]
 
-#get unique categories per customer in baseline and recent periods
-# average number of products per order in baseline vs recent
-baseline_diversity = baseline_df.groupby("customer_id")["products"].apply(
-    lambda x: x.apply(len).mean()
-)
-recent_diversity = recent_df.groupby("customer_id")["products"].apply(
-    lambda x: x.apply(len).mean()
-)
+    orders_df, customers_df = load_data(db)
 
-# diversity delta - negative means fewer products per order
-diversity_delta = (recent_diversity - baseline_diversity).round(2)
+    validate_orders_data(orders_df)
 
-print(diversity_delta.sort_values().head(10))
+    features_df = engineer_features(orders_df)
 
+    logging.info("Feature preview:")
+    logging.info(f"\n{features_df.head(10)}")
 
-#combine all features into a single DataFrame for analysis
-features_df = pd.DataFrame({
-    "customer_id": gap_change_pct.index,
-    "gap_change_pct": gap_change_pct,
-    "aov_change_pct": aov_change_pct,
-    "diversity_delta": diversity_delta
-}).reset_index(drop=True)
+    save_features(db, features_df)
+
+    logging.info("Feature engineering pipeline completed successfully!")
 
 
-print(features_df.head(10))
+# =========================================================
+# RUN SCRIPT
+# =========================================================
 
-#Save features to MongDB
-features_records = features_df.to_dict("records")
-db["features"].drop()  # drop existing collection to avoid duplicates
-db["features"].insert_many(features_records)
-
-print(f"Saved {len(features_records)} feature records to MongoDB!")
+if __name__ == "__main__":
+    main()
