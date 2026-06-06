@@ -61,7 +61,6 @@ def connect_to_mongo():
     mongodb_uri = os.getenv("MONGODB_URI")
 
     if not mongodb_uri:
-        logger.error("MONGODB_URI not found in .env file")
         raise SystemExit(1)
 
     logger.info("Connecting to MongoDB Atlas...")
