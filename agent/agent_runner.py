@@ -1,13 +1,9 @@
 # agent/agent_runner.py
 
-import os
-import sys
 import time
 import logging
 
 import pandas as pd
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.gemini_client import setup_gemini_client, call_gemini
 from agent.mcp_actions import connect_to_mongo, save_intervention, already_processed

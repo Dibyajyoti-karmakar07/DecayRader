@@ -1,7 +1,6 @@
 # agent/mcp_actions.py
 
 import os
-import sys
 import logging
 
 from datetime import datetime, timezone, timedelta
@@ -9,8 +8,6 @@ from datetime import datetime, timezone, timedelta
 import certifi
 from dotenv import load_dotenv
 from pymongo import MongoClient
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # =========================================================
@@ -132,7 +129,7 @@ def already_processed(db, customer_id: str) -> bool:
 def update_intervention_status(db, customer_id: str, new_status: str) -> bool:
     """
     Updates the status of an existing intervention.
-    Valid statuses: pending, completed, cancelled
+    Valid statuses: pending, completed, canceled
     """
 
     try:

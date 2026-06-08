@@ -1,13 +1,9 @@
 # agent/gemini_client.py
 
 import os
-import sys
 import time
 import json
 import logging
-
-# Allow running directly OR as part of the agent package
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
 from google import genai
