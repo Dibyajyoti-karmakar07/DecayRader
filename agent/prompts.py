@@ -73,13 +73,9 @@ Exact format:
 # =========================================================
 # REQUIRED FIELDS FOR VALIDATION
 # =========================================================
-
 REQUIRED_FIELDS = [
     "customer_id",
-    "company_name",
-    "city",
     "tier",
-    "account_manager",
     "risk_score",
     "risk_label",
     "aov_change_pct",
@@ -88,14 +84,10 @@ REQUIRED_FIELDS = [
 ]
 
 
-# =========================================================
-# BUILD CUSTOMER PROMPT
-# =========================================================
-
 def build_customer_prompt(customer: dict) -> str:
     """
-    Takes a merged customer dict and returns a formatted prompt.
-    Validates all required fields are present and non-null before building.
+    Takes an anonymized customer dict and returns a formatted prompt.
+    Only non-identifying fields are sent to Gemini.
     """
 
     missing = [
@@ -116,10 +108,7 @@ Analyze this customer and provide your intervention recommendation.
 
 CUSTOMER PROFILE:
 - Customer ID      : {customer.get('customer_id', 'N/A')}
-- Company Name     : {customer.get('company_name', 'N/A')}
-- City             : {customer.get('city', 'N/A')}
 - Tier             : {customer.get('tier', 'N/A')}
-- Account Manager  : {customer.get('account_manager', 'N/A')}
 - Risk Score       : {customer.get('risk_score', 0):.2f}
 - Risk Label       : {customer.get('risk_label', 'N/A')}
 

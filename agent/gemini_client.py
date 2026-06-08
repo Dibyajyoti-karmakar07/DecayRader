@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import json
 import logging
 
@@ -78,103 +79,88 @@ def call_gemini(client, customer: dict) -> dict:
     """
 
     customer_prompt = build_customer_prompt(customer)
+    full_prompt     = f"{SYSTEM_PROMPT}\n\n{customer_prompt}"
 
-    full_prompt = f"{SYSTEM_PROMPT}\n\n{customer_prompt}"
+    max_retries = 3
+    retry_delay = 5
 
-    try:
-        logger.info(
-            f"Calling Gemini for "
-            f"{customer.get('customer_id', 'UNKNOWN')}..."
-        )
+    for attempt in range(max_retries):
 
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=full_prompt,
-            config={"temperature": 0.2}
-        )
+        try:
+            logger.info(
+                f"Calling Gemini for "
+                f"{customer.get('customer_id', 'UNKNOWN')} "
+                f"(attempt {attempt + 1}/{max_retries})..."
+            )
 
-        # Guard against empty response
-        if not response.text:
-            logger.error(
-                f"Gemini returned empty response for "
+            response = client.models.generate_content(
+                model=MODEL_NAME,
+                contents=full_prompt,
+                config={"temperature": 0.2}
+            )
+
+            # Guard against empty response
+            if not response.text:
+                logger.error(
+                    f"Gemini returned empty response for "
+                    f"{customer.get('customer_id', 'UNKNOWN')}"
+                )
+                return None
+
+            raw_text = response.text.strip()
+
+            # Strip markdown code fences robustly
+            if raw_text.startswith("```"):
+                raw_text = raw_text.replace("```json", "")
+                raw_text = raw_text.replace("```", "")
+                raw_text = raw_text.strip()
+
+            parsed = json.loads(raw_text)
+
+            # Validate all required keys are present
+            missing_keys = [k for k in REQUIRED_KEYS if k not in parsed]
+
+            if missing_keys:
+                logger.error(
+                    f"Gemini response missing keys for "
+                    f"{customer.get('customer_id', 'UNKNOWN')}: "
+                    f"{missing_keys}"
+                )
+                return None
+
+            logger.info(
+                f"Gemini response received for "
                 f"{customer.get('customer_id', 'UNKNOWN')}"
             )
-            return None
 
-        raw_text = response.text.strip()
+            return parsed
 
-        # Strip markdown code fences robustly
-        if raw_text.startswith("```"):
-            raw_text = raw_text.replace("```json", "")
-            raw_text = raw_text.replace("```", "")
-            raw_text = raw_text.strip()
-
-        parsed = json.loads(raw_text)
-
-        # Validate all required keys are present
-        missing_keys = [k for k in REQUIRED_KEYS if k not in parsed]
-
-        if missing_keys:
+        except json.JSONDecodeError as e:
             logger.error(
-                f"Gemini response missing keys for "
-                f"{customer.get('customer_id', 'UNKNOWN')}: "
-                f"{missing_keys}"
+                f"Failed to parse Gemini JSON for "
+                f"{customer.get('customer_id', 'UNKNOWN')}: {e}"
             )
             return None
 
-        logger.info(
-            f"Gemini response received for "
-            f"{customer.get('customer_id', 'UNKNOWN')}"
-        )
+        except Exception as e:
+            if "429" in str(e) and attempt < max_retries - 1:
+                logger.warning(
+                    f"Rate limited for "
+                    f"{customer.get('customer_id', 'UNKNOWN')}. "
+                    f"Waiting {retry_delay}s before retry..."
+                )
+                time.sleep(retry_delay)
+                retry_delay *= 2  # 5s → 10s → 20s
+                continue
 
-        return parsed
+            logger.error(
+                f"Gemini API call failed for "
+                f"{customer.get('customer_id', 'UNKNOWN')}: {e}"
+            )
+            return None
 
-    except json.JSONDecodeError as e:
-        logger.error(
-            f"Failed to parse Gemini JSON for "
-            f"{customer.get('customer_id', 'UNKNOWN')}: {e}"
-        )
-        logger.error(f"Raw response was: {raw_text}")
-        return None
-
-    except Exception as e:
-        logger.error(
-            f"Gemini API call failed for "
-            f"{customer.get('customer_id', 'UNKNOWN')}: {e}"
-        )
-        return None
-
-
-# =========================================================
-# TEST BLOCK — DELETE AFTER CONFIRMING IT WORKS
-# =========================================================
-
-if __name__ == "__main__":
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s"
+    logger.error(
+        f"All {max_retries} attempts failed for "
+        f"{customer.get('customer_id', 'UNKNOWN')}"
     )
-
-    test_customer = {
-        "customer_id"    : "CST-001",
-        "company_name"   : "ABC Steel",
-        "city"           : "Surat",
-        "tier"           : "Gold",
-        "account_manager": "Rajesh",
-        "risk_score"     : 82.0,
-        "risk_label"     : "Critical",
-        "aov_change_pct" : -65.0,
-        "gap_change_pct" : 90.0,
-        "diversity_delta": -2.8
-    }
-
-    client = setup_gemini_client()
-    result = call_gemini(client, test_customer)
-
-    if result:
-        print("\n=== GEMINI RESPONSE ===")
-        for key, value in result.items():
-            print(f"{key:20} : {value}")
-    else:
-        print("Gemini call failed — check logs above.")
+    return None
