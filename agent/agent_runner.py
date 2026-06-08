@@ -146,29 +146,84 @@ def display_report(customer: dict, gemini_result: dict):
     print(f"  {outreach_message}")
     print("=" * 60)
 
+# =========================================================
+# AVAILABLE ACTIONS
+# =========================================================
+
+AVAILABLE_ACTIONS = [
+    "Email Customer",
+    "Phone Call",
+    "Video Meeting",
+    "In-Person Visit",
+    "CRM Follow-Up",
+    "Notify Team"
+]
 
 # =========================================================
 # CONFIRMATION PROMPT
 # =========================================================
 
-def ask_confirmation(customer: dict) -> str:
+def ask_confirmation_with_actions(
+    customer: dict,
+    gemini_result: dict
+) -> tuple:
     """
-    Asks the user to approve, skip, or quit for each customer.
-    Returns 'yes', 'skip', or 'quit'.
+    Shows Gemini's recommended action and lets the user
+    accept it, choose a different one, skip, or quit.
+
+    Returns a tuple: (decision, chosen_action)
+        decision      : 'yes', 'skip', or 'quit'
+        chosen_action : the action string or None
     """
+
+    recommended = gemini_result.get("primary_action", "N/A")
 
     while True:
 
-        answer = input(
-            f"\n  Approve intervention for "
-            f"{customer.get('company_name')}? "
-            f"(yes / skip / quit): "
-        ).strip().lower()
+        print(f"\n  Gemini recommends : {recommended}")
+        print(f"  ─" * 30)
+        print(f"  1. Accept recommendation  ({recommended})")
+        print(f"  2. Choose different action")
+        print(f"  3. Skip this customer")
+        print(f"  4. Quit")
 
-        if answer in ["yes", "skip", "quit"]:
-            return answer
+        choice = input(
+            f"\n  Enter choice (1/2/3/4): "
+        ).strip()
 
-        print("  Please type yes, skip, or quit.")
+        if choice == "1":
+            return ("yes", recommended)
+
+        elif choice == "2":
+            print(f"\n  Available Actions:")
+            for i, action in enumerate(AVAILABLE_ACTIONS, start=1):
+                print(f"  {i}. {action}")
+
+            action_choice = input(
+                f"\n  Enter choice (1-{len(AVAILABLE_ACTIONS)}): "
+            ).strip()
+
+            if action_choice.isdigit():
+                index = int(action_choice) - 1
+                if 0 <= index < len(AVAILABLE_ACTIONS):
+                    chosen = AVAILABLE_ACTIONS[index]
+                    logger.info(
+                        f"User overrode action for "
+                        f"{customer.get('customer_id')} "
+                        f"from '{recommended}' to '{chosen}'"
+                    )
+                    return ("yes", chosen)
+
+            print("  Invalid choice. Please try again.")
+
+        elif choice == "3":
+            return ("skip", None)
+
+        elif choice == "4":
+            return ("quit", None)
+
+        else:
+            print("  Please enter 1, 2, 3, or 4.")
 
 
 # =========================================================
@@ -250,7 +305,10 @@ def main():
         display_report(customer, gemini_result)
 
         # Ask for confirmation
-        decision = ask_confirmation(customer)
+        decision, chosen_action = ask_confirmation_with_actions(
+            customer,
+            gemini_result
+        )
 
         if decision == "quit":
             logger.info("User quit the agent loop.")
@@ -262,10 +320,14 @@ def main():
             continue
 
         elif decision == "yes":
+            # Override primary_action with user's choice
+            gemini_result["primary_action"] = chosen_action
+
             success = save_intervention(db, customer, gemini_result)
 
             if success:
-                print(f"\n  ✅ Intervention saved for "
+                print(f"\n  ✅ Intervention saved — "
+                      f"{chosen_action} for "
                       f"{customer.get('company_name')}")
                 approved += 1
             else:
