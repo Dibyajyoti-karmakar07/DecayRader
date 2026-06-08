@@ -4,7 +4,7 @@ import os
 import sys
 import logging
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import certifi
 from dotenv import load_dotenv
@@ -89,8 +89,10 @@ def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
             "urgency"         : gemini_result.get("urgency"),
 
             # Metadata
-            "status"          : "approved",
-            "approved_at"     : datetime.now(timezone.utc).isoformat()
+            "status": "pending",
+            "approved_at": datetime.now(timezone.utc).isoformat(),
+            "follow_up_date": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+            "completed_at": None
         }
 
         db["interventions"].insert_one(document)
@@ -114,15 +116,59 @@ def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
 # =========================================================
 # CHECK FOR DUPLICATE
 # =========================================================
-
 def already_processed(db, customer_id: str) -> bool:
     """
-    Checks if an intervention already exists for this customer.
-    Prevents duplicate entries on re-runs.
+    Returns True only if a PENDING intervention exists.
+    Completed interventions allow re-processing.
     """
 
-    existing = db["interventions"].find_one(
-        {"customer_id": customer_id}
-    )
+    existing = db["interventions"].find_one({
+        "customer_id": customer_id,
+        "status"     : "pending"
+    })
 
     return existing is not None
+
+def update_intervention_status(db, customer_id: str, new_status: str) -> bool:
+    """
+    Updates the status of an existing intervention.
+    Valid statuses: pending, completed, cancelled
+    """
+
+    try:
+        update_fields = {"status": new_status}
+
+        if new_status == "completed":
+            update_fields["completed_at"] = datetime.now(timezone.utc).isoformat()
+
+        db["interventions"].update_one(
+            {"customer_id": customer_id},
+            {"$set": update_fields}
+        )
+
+        logger.info(f"{customer_id} status updated to {new_status}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to update status for {customer_id}: {e}")
+        return False
+
+
+def get_pending_interventions(db) -> list:
+    """
+    Returns all interventions with status = pending.
+    """
+
+    results = list(db["interventions"].find({"status": "pending"}))
+    logger.info(f"Found {len(results)} pending interventions")
+    return results
+
+
+def get_completed_interventions(db) -> list:
+    """
+    Returns all interventions with status = completed.
+    """
+
+    results = list(db["interventions"].find({"status": "completed"}))
+    logger.info(f"Found {len(results)} completed interventions")
+    return results
