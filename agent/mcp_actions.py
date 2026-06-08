@@ -89,7 +89,8 @@ def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
             "status": "pending",
             "approved_at": datetime.now(timezone.utc).isoformat(),
             "follow_up_date": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
-            "completed_at": None
+            "completed_at": None,
+            "note": None
         }
 
         db["interventions"].insert_one(document)
@@ -126,30 +127,102 @@ def already_processed(db, customer_id: str) -> bool:
 
     return existing is not None
 
-def update_intervention_status(db, customer_id: str, new_status: str) -> bool:
+# =========================================================
+# UPDATE INTERVENTION STATUS
+# =========================================================
+
+def update_intervention_status(
+    db,
+    customer_id: str,
+    new_status: str,
+    note: str = None
+) -> bool:
     """
     Updates the status of an existing intervention.
-    Valid statuses: pending, completed, canceled
+    Optionally saves a completion note.
+    Valid statuses: pending, completed, cancelled
     """
 
     try:
         update_fields = {"status": new_status}
 
         if new_status == "completed":
-            update_fields["completed_at"] = datetime.now(timezone.utc).isoformat()
+            update_fields["completed_at"] = datetime.now(
+                timezone.utc
+            ).isoformat()
+
+        if note:
+            update_fields["note"] = note
 
         db["interventions"].update_one(
             {"customer_id": customer_id},
             {"$set": update_fields}
         )
 
-        logger.info(f"{customer_id} status updated to {new_status}")
+        logger.info(
+            f"{customer_id} status updated to {new_status}"
+        )
         return True
 
     except Exception as e:
-        logger.error(f"Failed to update status for {customer_id}: {e}")
+        logger.error(
+            f"Failed to update status for {customer_id}: {e}"
+        )
+        return False
+# =========================================================
+# DELETE INTERVENTION
+# =========================================================
+
+def delete_intervention(db, customer_id: str) -> bool:
+    """
+    Permanently deletes a pending intervention.
+    Only deletes pending — completed ones stay as history.
+    """
+
+    try:
+        result = db["interventions"].delete_one({
+            "customer_id": customer_id,
+            "status"     : "pending"
+        })
+
+        if result.deleted_count == 0:
+            logger.warning(
+                f"No pending intervention found for {customer_id}"
+            )
+            return False
+
+        logger.info(f"Intervention deleted for {customer_id}")
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"Failed to delete intervention for {customer_id}: {e}"
+        )
         return False
 
+# =========================================================
+# GET LAST COMPLETED INTERVENTION
+# =========================================================
+
+def get_last_completed_intervention(db, customer_id: str) -> dict:
+    """
+    Returns the most recent completed intervention for a customer.
+    Used by agent_runner to show history before processing.
+    """
+
+    result = db["interventions"].find_one(
+        {
+            "customer_id": customer_id,
+            "status"     : "completed"
+        },
+        sort=[("completed_at", -1)]
+    )
+
+    return result
+
+# =========================================================
+# GET PENDING INTERVENTIONS
+# =========================================================
 
 def get_pending_interventions(db) -> list:
     """
@@ -160,6 +233,9 @@ def get_pending_interventions(db) -> list:
     logger.info(f"Found {len(results)} pending interventions")
     return results
 
+# =========================================================
+# GET COMPLETED INTERVENTIONS
+# =========================================================
 
 def get_completed_interventions(db) -> list:
     """
