@@ -10,6 +10,7 @@ from agent.mcp_actions import (
     connect_to_mongo,
     get_pending_interventions,
     get_completed_interventions,
+    get_cancelled_interventions,
     update_intervention_status,
     delete_intervention
 )
@@ -86,6 +87,32 @@ def display_completed(interventions: list):
 
 
 # =========================================================
+# DISPLAY CANCELLED INTERVENTIONS
+# =========================================================
+
+def display_cancelled(interventions: list):
+    """
+    Prints all cancelled interventions.
+    """
+
+    if not interventions:
+        print("\n  No cancelled interventions found.")
+        return
+
+    print("\n" + "=" * 60)
+    print("  CANCELLED INTERVENTIONS")
+    print("=" * 60)
+
+    for doc in interventions:
+        print(f"\n  {doc.get('company_name')} "
+              f"({doc.get('customer_id')})")
+        print(f"      Action         : {doc.get('primary_action')}")
+        print(f"      Approved On    : {doc.get('approved_at')[:10]}")
+
+    print("\n" + "=" * 60)
+
+
+# =========================================================
 # MARK AS COMPLETED
 # =========================================================
 
@@ -110,10 +137,10 @@ def mark_completed(db, interventions: list):
         print("  Invalid input.")
         return
 
-    index = int(choice) - 1
-
     if choice == "0":
         return
+
+    index = int(choice) - 1
 
     if index < 0 or index >= len(interventions):
         print("  Invalid number.")
@@ -147,23 +174,24 @@ def mark_completed(db, interventions: list):
 
 
 # =========================================================
-# DELETE INTERVENTION
+# CANCEL INTERVENTION
 # =========================================================
 
-def delete_pending(db, interventions: list):
+def cancel_pending(db, interventions: list):
     """
-    Lets user pick and permanently delete a pending intervention.
+    Lets user pick a pending intervention and soft delete it.
+    Document stays in MongoDB as cancelled — not permanently removed.
     """
 
     if not interventions:
-        print("\n  No pending interventions to delete.")
+        print("\n  No pending interventions to cancel.")
         return
 
     display_pending(interventions)
 
     choice = input(
-        "\n  Enter number to delete "
-        "(or 0 to cancel): "
+        "\n  Enter number to cancel "
+        "(or 0 to go back): "
     ).strip()
 
     if not choice.isdigit():
@@ -184,8 +212,8 @@ def delete_pending(db, interventions: list):
     company_name = selected.get("company_name")
 
     confirm = input(
-        f"\n  Are you sure you want to delete "
-        f"{company_name}? (yes/no): "
+        f"\n  Are you sure you want to cancel "
+        f"the intervention for {company_name}? (yes/no): "
     ).strip().lower()
 
     if confirm != "yes":
@@ -195,9 +223,9 @@ def delete_pending(db, interventions: list):
     success = delete_intervention(db, customer_id)
 
     if success:
-        print(f"\n  ✅ Intervention for {company_name} deleted.")
+        print(f"\n  ✅ Intervention for {company_name} cancelled.")
     else:
-        print(f"\n  ❌ Failed to delete — check logs.")
+        print(f"\n  ❌ Failed to cancel — check logs.")
 
 
 # =========================================================
@@ -218,11 +246,12 @@ def main():
         print("  1. View pending interventions")
         print("  2. Mark intervention as completed")
         print("  3. View history (completed)")
-        print("  4. Delete a pending intervention")
-        print("  5. Exit")
+        print("  4. Cancel a pending intervention")
+        print("  5. View cancelled interventions")
+        print("  6. Exit")
         print("=" * 60)
 
-        choice = input("\n  Enter choice (1-5): ").strip()
+        choice = input("\n  Enter choice (1-6): ").strip()
 
         if choice == "1":
             pending = get_pending_interventions(db)
@@ -238,15 +267,19 @@ def main():
 
         elif choice == "4":
             pending = get_pending_interventions(db)
-            delete_pending(db, pending)
+            cancel_pending(db, pending)
 
         elif choice == "5":
+            cancelled = get_cancelled_interventions(db)
+            display_cancelled(cancelled)
+
+        elif choice == "6":
             logger.info("Intervention Manager exiting.")
             print("\n  Goodbye.")
             break
 
         else:
-            print("  Please enter 1, 2, 3, 4, or 5.")
+            print("  Please enter 1, 2, 3, 4, 5, or 6.")
 
 
 if __name__ == "__main__":
