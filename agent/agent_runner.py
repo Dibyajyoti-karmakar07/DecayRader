@@ -1,13 +1,22 @@
+
 # agent/agent_runner.py
 
+import os
+import sys
 import time
 import logging
 
 import pandas as pd
 
-from agent.gemini_client import setup_gemini_client, call_gemini
-from agent.mcp_actions import connect_to_mongo, save_intervention, already_processed
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from agent.gemini_client import setup_gemini_client, call_gemini
+from agent.mcp_actions import (
+    connect_to_mongo,
+    save_intervention,
+    already_processed,
+    get_last_completed_intervention
+)
 
 # =========================================================
 # LOGGING SETUP
@@ -246,6 +255,42 @@ def anonymize_customer(customer: dict) -> dict:
         "diversity_delta": customer.get("diversity_delta")
     }
 
+# =========================================================
+# DISPLAY LAST INTERVENTION HISTORY
+# =========================================================
+
+def display_last_intervention(db, customer_id: str):
+    """
+    Shows the most recent completed intervention for a customer.
+    Also shows total number of times this customer was intervened.
+    """
+
+    last = get_last_completed_intervention(db, customer_id)
+
+    # Count total interventions across all statuses
+    total = db["interventions"].count_documents({
+        "customer_id": customer_id
+    })
+
+    print("-" * 60)
+
+    if last:
+        print(f"  LAST INTERVENTION HISTORY")
+        print(f"  Total Interventions : {total}")
+        print(f"  Last Date           : {last.get('completed_at')[:10]}")
+        print(f"  Last Action         : {last.get('primary_action')}")
+        print(f"  Status              : Completed")
+        print(f"  Note                : "
+              f"{last.get('note') or 'No note added'}")
+    else:
+        if total > 0:
+            print(f"  LAST INTERVENTION HISTORY")
+            print(f"  Total Interventions : {total}")
+            print(f"  No completed interventions yet.")
+        else:
+            print(f"  No previous interventions for this customer.")
+
+    print("-" * 60)
 
 # =========================================================
 # MAIN AGENT LOOP
@@ -286,6 +331,9 @@ def main():
             )
             already_done += 1
             continue
+
+        # Show last intervention history      ← ADD THIS
+        display_last_intervention(db, customer_id)
 
         # Anonymize before sending to Gemini
         anonymous     = anonymize_customer(customer)
