@@ -139,7 +139,7 @@ def call_gemini(client, customer: dict) -> dict:
             return None
 
         except Exception as e:
-            if "429" in str(e) and attempt < max_retries - 1:
+            if ("429" in str(e) or "503" in str(e)) and attempt < max_retries - 1:
                 logger.warning(
                     f"Rate limited for "
                     f"{customer.get('customer_id', 'UNKNOWN')}. "
