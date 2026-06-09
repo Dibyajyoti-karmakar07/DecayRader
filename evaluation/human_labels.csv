@@ -1,0 +1,19 @@
+customer_id,expected_action,expected_urgency
+CST-022,No Action,Low
+CST-060,No Action,Low
+CST-009,No Action,Low
+CST-070,No Action,Low
+CST-013,No Action,Low
+CST-050,CRM Follow-Up,Low
+CST-005,CRM Follow-Up,Low
+CST-025,CRM Follow-Up,Low
+CST-040,CRM Follow-Up,Low
+CST-011,CRM Follow-Up,Low
+CST-033,Email Customer,Medium
+CST-015,Email Customer,Medium
+CST-062,Email Customer,Medium
+CST-051,Email Customer,Medium
+CST-064,Email Customer,Medium
+CST-007,Phone Call,High
+CST-010,Phone Call,High
+CST-042,Phone Call,High
