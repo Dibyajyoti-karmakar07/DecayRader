@@ -32,11 +32,12 @@ logger = logging.getLogger(__name__)
 # =========================================================
 
 MODELS = [
-    "gemini-3.5-flash",
-    "gemini-3-flash",
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-3.1-flash-lite"
+    "gemini-3.5-flash",       # Primary — 20 RPD
+    "gemini-3.1-flash-lite",  # Fallback 1 — 1000 RPD
+    "gemini-2.5-flash",       # Fallback 2 — check quota
+    "gemini-2.5-flash-lite",  # Fallback 3 — check quota
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
 ]
 
 REQUIRED_KEYS = [
@@ -48,6 +49,16 @@ REQUIRED_KEYS = [
     "outreach_message",
     "urgency"
 ]
+
+ACTION_MAP = {
+    "phone call": "phone call",
+    "call customer": "phone call",
+    "phone outreach": "phone call",
+
+    "in-person visit": "in-person visit",
+    "onsite visit": "in-person visit",
+    "visit customer": "in-person visit"
+}
 
 EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_CUSTOMERS_PATH = os.path.join(EVAL_DIR, "test_customers.json")
@@ -82,6 +93,62 @@ def setup_gemini_client() -> genai.Client:
     logger.info("Gemini client initialized successfully")
 
     return genai.Client(api_key=api_key)
+
+
+# =========================================================
+# VALIDATION & NORMALIZATION
+# =========================================================
+
+def validate_model(client: genai.Client, model: str) -> bool:
+    """
+    Validates that a model is callable by sending a small test request.
+
+    Args:
+        client: Gemini client instance
+        model: Model name to validate
+
+    Returns:
+        True if model is callable, False if unavailable or errors
+    """
+
+    try:
+        logger.info(f"Validating model: {model}...")
+
+        test_prompt = "Respond with 'OK' in JSON: {\"status\": \"OK\"}"
+
+        response = client.models.generate_content(
+            model=model,
+            contents=test_prompt,
+            config={"temperature": 0.2}
+        )
+
+        if response.text:
+            logger.info(f"Model validated: {model}")
+            return True
+
+    except Exception as e:
+        logger.warning(f"Skipping unavailable model: {model} ({e})")
+        return False
+
+    return False
+
+
+def normalize_action(action: str) -> str:
+    """
+    Normalizes action string for comparison.
+
+    Converts to lowercase, strips whitespace, maps through ACTION_MAP.
+
+    Args:
+        action: Raw action string from model
+
+    Returns:
+        Normalized action string
+    """
+
+    normalized = str(action).lower().strip()
+
+    return ACTION_MAP.get(normalized, normalized)
 
 
 # =========================================================
@@ -148,7 +215,7 @@ def call_gemini_with_timing(
     client: genai.Client,
     model: str,
     customer: dict
-) -> tuple[Optional[dict], float, bool]:
+) -> tuple[Optional[dict], float, bool, int, bool]:
     """
     Sends customer data to Gemini model with timing and validation.
 
@@ -158,10 +225,12 @@ def call_gemini_with_timing(
         customer: Customer dict with profile and decay signals
 
     Returns:
-        Tuple of (parsed_json, latency_seconds, is_valid)
+        Tuple of (parsed_json, latency_seconds, is_valid, response_length, api_success)
         - parsed_json: Dict with response or None if failed
         - latency_seconds: Float seconds for API call
-        - is_valid: Boolean whether JSON is valid
+        - is_valid: Boolean whether JSON is valid and complete
+        - response_length: Length of response text or 0 if failed
+        - api_success: Boolean whether API call completed successfully
 
     Logs errors for failures but does not raise exceptions
     """
@@ -191,12 +260,16 @@ def call_gemini_with_timing(
 
             latency = time.time() - start_time
 
+            # API call succeeded (response received)
+            api_success = True
+
             # Guard against empty response
             if not response.text:
                 logger.error(f"{model} returned empty response for {customer_id}")
-                return (None, latency, False)
+                return (None, latency, False, 0, api_success)
 
             raw_text = response.text.strip()
+            response_length = len(response.text)
 
             # Strip markdown code fences
             if raw_text.startswith("```"):
@@ -213,15 +286,15 @@ def call_gemini_with_timing(
                 logger.error(
                     f"{model} response missing keys for {customer_id}: {missing_keys}"
                 )
-                return (parsed, latency, False)
+                return (parsed, latency, False, response_length, api_success)
 
             logger.info(f"{model} response received for {customer_id}")
 
-            return (parsed, latency, True)
+            return (parsed, latency, True, response_length, api_success)
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse {model} JSON for {customer_id}: {e}")
-            return (None, 0, False)
+            return (None, 0, False, 0, False)
 
         except Exception as e:
             if ("429" in str(e) or "503" in str(e)) and attempt < max_retries - 1:
@@ -234,10 +307,10 @@ def call_gemini_with_timing(
                 continue
 
             logger.error(f"{model} API call failed for {customer_id}: {e}")
-            return (None, 0, False)
+            return (None, 0, False, 0, False)
 
     logger.error(f"All {max_retries} attempts failed for {customer_id}")
-    return (None, 0, False)
+    return (None, 0, False, 0, False)
 
 
 # =========================================================
@@ -261,7 +334,8 @@ def evaluate_predictions(
 
     Returns:
         List of result dicts, one per customer, with columns:
-        - model
+        - model (requested)
+        - actual_model_used
         - customer_id
         - expected_action
         - predicted_action
@@ -270,7 +344,9 @@ def evaluate_predictions(
         - predicted_urgency
         - urgency_correct
         - latency_seconds
-        - success
+        - response_length
+        - success (API reliability)
+        - json_valid (output reliability)
     """
 
     results = []
@@ -290,24 +366,29 @@ def evaluate_predictions(
         expected_urgency = label_row["expected_urgency"].values[0]
 
         # Call model
-        parsed_json, latency, is_valid = call_gemini_with_timing(
+        parsed_json, latency, is_valid, response_length, api_success = call_gemini_with_timing(
             client, model, customer
         )
+
+        # Extract actual model used from response
+        actual_model_used = model
+        if parsed_json:
+            actual_model_used = parsed_json.get("model_used", model)
 
         # Extract predictions
         if parsed_json and is_valid:
             predicted_action = parsed_json.get("primary_action", "Unknown")
             predicted_urgency = parsed_json.get("urgency", "Unknown")
-            success = True
         else:
             predicted_action = "Parse Error"
             predicted_urgency = "Parse Error"
-            success = False
 
-        # Compare predictions (case-insensitive)
+        # Compare predictions with normalization for actions
+        normalized_predicted = normalize_action(predicted_action)
+        normalized_expected = normalize_action(expected_action)
+
         action_correct = (
-            str(predicted_action).lower().strip()
-            == str(expected_action).lower().strip()
+            normalized_predicted == normalized_expected
         )
 
         urgency_correct = (
@@ -316,7 +397,8 @@ def evaluate_predictions(
         )
 
         result = {
-            "model": model,
+            "requested_model": model,
+            "actual_model_used": actual_model_used,
             "customer_id": customer_id,
             "expected_action": expected_action,
             "predicted_action": predicted_action,
@@ -325,7 +407,9 @@ def evaluate_predictions(
             "predicted_urgency": predicted_urgency,
             "urgency_correct": urgency_correct,
             "latency_seconds": latency,
-            "success": success
+            "response_length": response_length,
+            "success": api_success,
+            "json_valid": is_valid
         }
 
         results.append(result)
@@ -376,13 +460,14 @@ def calculate_model_metrics(results_df: pd.DataFrame) -> dict:
         - action_accuracy
         - urgency_accuracy
         - average_latency_seconds
+        - average_response_length
     """
 
     metrics = {}
 
     for model in MODELS:
 
-        model_results = results_df[results_df["model"] == model]
+        model_results = results_df[results_df["requested_model"] == model]
 
         if len(model_results) == 0:
             continue
@@ -393,7 +478,7 @@ def calculate_model_metrics(results_df: pd.DataFrame) -> dict:
 
         success_rate = (successful_calls / total_cases) * 100 if total_cases > 0 else 0
         json_validity_rate = (
-            (model_results["success"].sum() / total_cases) * 100
+            (model_results["json_valid"].sum() / total_cases) * 100
             if total_cases > 0
             else 0
         )
@@ -408,6 +493,7 @@ def calculate_model_metrics(results_df: pd.DataFrame) -> dict:
             else 0
         )
         average_latency = model_results["latency_seconds"].mean()
+        average_response_length = model_results["response_length"].mean()
 
         metrics[model] = {
             "total_cases": total_cases,
@@ -417,7 +503,8 @@ def calculate_model_metrics(results_df: pd.DataFrame) -> dict:
             "json_validity_rate": json_validity_rate,
             "action_accuracy": action_accuracy,
             "urgency_accuracy": urgency_accuracy,
-            "average_latency_seconds": average_latency
+            "average_latency_seconds": average_latency,
+            "average_response_length": average_response_length
         }
 
     return metrics
@@ -474,6 +561,7 @@ def generate_report(metrics: dict) -> None:
         report_lines.append(f"- **Action Accuracy:** {m['action_accuracy']:.2f}%")
         report_lines.append(f"- **Urgency Accuracy:** {m['urgency_accuracy']:.2f}%")
         report_lines.append(f"- **Average Latency:** {m['average_latency_seconds']:.2f}s")
+        report_lines.append(f"- **Average Response Length:** {m['average_response_length']:.0f} chars")
         report_lines.append("")
 
     # Winner
@@ -503,23 +591,38 @@ def generate_report(metrics: dict) -> None:
 def main():
     """
     Orchestrates the full benchmark run:
-    1. Loads test customers and human labels
-    2. For each model, evaluates all customers
-    3. Saves results to CSV
-    4. Calculates metrics
-    5. Generates markdown report
+    1. Validates all models are callable
+    2. Loads test customers and human labels
+    3. For each valid model, evaluates all customers
+    4. Saves results to CSV
+    5. Calculates metrics
+    6. Generates markdown report
     """
 
     logger.info("Starting benchmark run...")
 
     client = setup_gemini_client()
 
+    # Validate models before benchmarking
+    logger.info("Validating models...")
+    valid_models = []
+
+    for model in MODELS:
+        if validate_model(client, model):
+            valid_models.append(model)
+
+    if not valid_models:
+        logger.error("No models passed validation. Exiting.")
+        raise SystemExit(1)
+
+    logger.info(f"Validated {len(valid_models)} models: {valid_models}")
+
     customers = load_customers()
     labels_df = load_labels()
 
     all_results = []
 
-    for model in MODELS:
+    for model in valid_models:
         logger.info(f"Evaluating {model}...")
         model_results = evaluate_predictions(model, customers, labels_df, client)
         all_results.extend(model_results)
@@ -540,15 +643,17 @@ def main():
     logger.info("BENCHMARK SUMMARY")
     logger.info("=" * 60)
 
-    for model in MODELS:
+    for model in valid_models:
         if model in metrics:
             m = metrics[model]
             logger.info(f"\n{model}:")
             logger.info(f"  Total Cases: {m['total_cases']}")
             logger.info(f"  Success Rate: {m['success_rate']:.2f}%")
+            logger.info(f"  JSON Validity: {m['json_validity_rate']:.2f}%")
             logger.info(f"  Action Accuracy: {m['action_accuracy']:.2f}%")
             logger.info(f"  Urgency Accuracy: {m['urgency_accuracy']:.2f}%")
             logger.info(f"  Average Latency: {m['average_latency_seconds']:.2f}s")
+            logger.info(f"  Average Response Length: {m['average_response_length']:.0f} chars")
 
 
 if __name__ == "__main__":

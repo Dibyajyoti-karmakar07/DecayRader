@@ -27,11 +27,11 @@ logger = logging.getLogger(__name__)
 # =========================================================
 
 FALLBACK_MODELS = [
-    "gemini-3.5-flash",       # Primary — best quality, 20 RPD
-    "gemini-2.0-flash",       # Fallback 1 — 1500 RPD
-    "gemini-1.5-flash",       # Fallback 2 — 1500 RPD
-    "gemini-3.1-flash-lite",  # Fallback 3 — 1000 RPD
+    "gemini-3.5-flash",       # Primary — 20 RPD
+    "gemini-3.1-flash-lite",  # Fallback 1 — 1000 RPD
+    "gemini-2.5-flash-lite",   # Fallback 2 — check quota
 ]
+
 
 REQUIRED_KEYS = [
     "decay_summary",
@@ -185,3 +185,35 @@ def call_gemini(client, customer: dict) -> dict:
         f"{customer.get('customer_id', 'UNKNOWN')}"
     )
     return None
+
+
+# =========================================================
+# TEST BLOCK — DELETE AFTER CONFIRMING MODELS WORK
+# =========================================================
+
+if __name__ == "__main__":
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(message)s"
+    )
+
+    test_customer = {
+        "customer_id"    : "CST-001",
+        "tier"           : "Gold",
+        "risk_score"     : 82.0,
+        "risk_label"     : "Critical",
+        "aov_change_pct" : -65.0,
+        "gap_change_pct" : 90.0,
+        "diversity_delta": -2.8
+    }
+
+    client = setup_gemini_client()
+    result = call_gemini(client, test_customer)
+
+    if result:
+        print("\n=== GEMINI RESPONSE ===")
+        for key, value in result.items():
+            print(f"{key:20} : {value}")
+    else:
+        print("All models failed — check logs above.")

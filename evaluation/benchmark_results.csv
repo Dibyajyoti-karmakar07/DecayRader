@@ -1,91 +1,55 @@
-model,customer_id,expected_action,predicted_action,action_correct,expected_urgency,predicted_urgency,urgency_correct,latency_seconds,success
-gemini-3.5-flash,CST-022,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-060,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-050,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-005,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-009,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-033,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-007,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-010,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-015,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-070,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-025,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-042,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-013,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-062,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-040,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-051,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-064,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3.5-flash,CST-011,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-022,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-060,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-050,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-005,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-009,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-033,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3-flash,CST-007,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-3-flash,CST-010,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-3-flash,CST-015,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3-flash,CST-070,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-025,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-042,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-3-flash,CST-013,No Action,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-062,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3-flash,CST-040,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-3-flash,CST-051,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3-flash,CST-064,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-3-flash,CST-011,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-2.5-flash,CST-022,No Action,No Action,True,Low,Low,True,22.632778882980347,True
-gemini-2.5-flash,CST-060,No Action,No Action,True,Low,Low,True,17.087350130081177,True
-gemini-2.5-flash,CST-050,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,15.381113529205322,True
-gemini-2.5-flash,CST-005,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,5.443660497665405,True
-gemini-2.5-flash,CST-009,No Action,No Action,True,Low,Low,True,20.424001216888428,True
-gemini-2.5-flash,CST-033,Email Customer,Phone Call,False,Medium,High,False,11.900547504425049,True
-gemini-2.5-flash,CST-007,Phone Call,Phone Call,True,High,High,True,5.470142602920532,True
-gemini-2.5-flash,CST-010,Phone Call,Phone Call,True,High,High,True,11.135144472122192,True
-gemini-2.5-flash,CST-015,Email Customer,Phone Call,False,Medium,High,False,6.885168075561523,True
-gemini-2.5-flash,CST-070,No Action,No Action,True,Low,Low,True,19.29957866668701,True
-gemini-2.5-flash,CST-025,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,4.510574817657471,True
-gemini-2.5-flash,CST-042,Phone Call,Phone Call,True,High,High,True,7.086589336395264,True
-gemini-2.5-flash,CST-013,No Action,No Action,True,Low,Low,True,13.19057583808899,True
-gemini-2.5-flash,CST-062,Email Customer,Phone Call,False,Medium,Medium,True,6.370663404464722,True
-gemini-2.5-flash,CST-040,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,4.86457085609436,True
-gemini-2.5-flash,CST-051,Email Customer,Phone Call,False,Medium,Medium,True,7.797075510025024,True
-gemini-2.5-flash,CST-064,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,False
-gemini-2.5-flash,CST-011,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,False
-gemini-2.5-flash-lite,CST-022,No Action,No Action,True,Low,Low,True,1.5475494861602783,True
-gemini-2.5-flash-lite,CST-060,No Action,No Action,True,Low,Low,True,1.5693528652191162,True
-gemini-2.5-flash-lite,CST-050,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.3447761535644531,True
-gemini-2.5-flash-lite,CST-005,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.6897718906402588,True
-gemini-2.5-flash-lite,CST-009,No Action,No Action,True,Low,Low,True,1.4560637474060059,True
-gemini-2.5-flash-lite,CST-033,Email Customer,Phone Call,False,Medium,High,False,1.5728697776794434,True
-gemini-2.5-flash-lite,CST-007,Phone Call,Phone Call,True,High,High,True,1.4660332202911377,True
-gemini-2.5-flash-lite,CST-010,Phone Call,Phone Call,True,High,High,True,1.2238938808441162,True
-gemini-2.5-flash-lite,CST-015,Email Customer,Phone Call,False,Medium,High,False,1.3315770626068115,True
-gemini-2.5-flash-lite,CST-070,No Action,No Action,True,Low,Low,True,1.2356421947479248,True
-gemini-2.5-flash-lite,CST-025,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.5728371143341064,True
-gemini-2.5-flash-lite,CST-042,Phone Call,Parse Error,False,High,Parse Error,False,0.0,False
-gemini-2.5-flash-lite,CST-013,No Action,No Action,True,Low,Low,True,1.4603607654571533,True
-gemini-2.5-flash-lite,CST-062,Email Customer,Email Customer,True,Medium,Medium,True,1.2324132919311523,True
-gemini-2.5-flash-lite,CST-040,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.8111190795898438,True
-gemini-2.5-flash-lite,CST-051,Email Customer,Email Customer,True,Medium,Medium,True,1.462113618850708,True
-gemini-2.5-flash-lite,CST-064,Email Customer,Email Customer,True,Medium,Medium,True,1.10756254196167,True
-gemini-2.5-flash-lite,CST-011,CRM Follow-Up,CRM Follow-Up,True,Low,Medium,False,1.5788524150848389,True
-gemini-3.1-flash-lite,CST-022,No Action,No Action,True,Low,Low,True,2.046420097351074,True
-gemini-3.1-flash-lite,CST-060,No Action,No Action,True,Low,Low,True,1.3441510200500488,True
-gemini-3.1-flash-lite,CST-050,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,6.714677333831787,True
-gemini-3.1-flash-lite,CST-005,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.22243070602417,True
-gemini-3.1-flash-lite,CST-009,No Action,No Action,True,Low,Low,True,1.105137586593628,True
-gemini-3.1-flash-lite,CST-033,Email Customer,Phone Call,False,Medium,High,False,1.3404779434204102,True
-gemini-3.1-flash-lite,CST-007,Phone Call,Phone Call,True,High,High,True,1.2209298610687256,True
-gemini-3.1-flash-lite,CST-010,Phone Call,Phone Call,True,High,High,True,1.6935021877288818,True
-gemini-3.1-flash-lite,CST-015,Email Customer,Phone Call,False,Medium,High,False,3.0957796573638916,True
-gemini-3.1-flash-lite,CST-070,No Action,No Action,True,Low,Low,True,2.39615535736084,True
-gemini-3.1-flash-lite,CST-025,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.4527437686920166,True
-gemini-3.1-flash-lite,CST-042,Phone Call,Phone Call,True,High,High,True,1.8125872611999512,True
-gemini-3.1-flash-lite,CST-013,No Action,No Action,True,Low,Low,True,2.9760589599609375,True
-gemini-3.1-flash-lite,CST-062,Email Customer,Phone Call,False,Medium,High,False,1.8081908226013184,True
-gemini-3.1-flash-lite,CST-040,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,2.160956382751465,True
-gemini-3.1-flash-lite,CST-051,Email Customer,Phone Call,False,Medium,Medium,True,1.2170519828796387,True
-gemini-3.1-flash-lite,CST-064,Email Customer,Phone Call,False,Medium,Medium,True,1.9674432277679443,True
-gemini-3.1-flash-lite,CST-011,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.3445327281951904,True
+requested_model,actual_model_used,customer_id,expected_action,predicted_action,action_correct,expected_urgency,predicted_urgency,urgency_correct,latency_seconds,response_length,success,json_valid
+gemini-3.5-flash,gemini-3.5-flash,CST-022,No Action,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-060,No Action,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-050,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,8.767208099365234,915,True,True
+gemini-3.5-flash,gemini-3.5-flash,CST-005,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-009,No Action,No Action,True,Low,Low,True,14.772852897644043,856,True,True
+gemini-3.5-flash,gemini-3.5-flash,CST-033,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-007,Phone Call,Parse Error,False,High,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-010,Phone Call,Parse Error,False,High,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-015,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-070,No Action,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-025,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-042,Phone Call,Parse Error,False,High,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-013,No Action,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-062,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-040,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-051,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-064,Email Customer,Parse Error,False,Medium,Parse Error,False,0.0,0,False,False
+gemini-3.5-flash,gemini-3.5-flash,CST-011,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,0,False,False
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-022,No Action,No Action,True,Low,Low,True,4.924152612686157,796,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-060,No Action,No Action,True,Low,Low,True,6.317980051040649,798,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-050,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.661802053451538,920,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-005,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.3813543319702148,909,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-009,No Action,No Action,True,Low,Low,True,3.3179984092712402,743,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-033,Email Customer,Phone Call,False,Medium,High,False,1.571857213973999,877,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-007,Phone Call,Phone Call,True,High,High,True,4.4417760372161865,860,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-010,Phone Call,Phone Call,True,High,High,True,1.3421456813812256,871,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-015,Email Customer,Phone Call,False,Medium,High,False,14.697553396224976,882,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-070,No Action,No Action,True,Low,Low,True,1.1760637760162354,787,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-025,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.815814733505249,805,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-042,Phone Call,Phone Call,True,High,High,True,4.626017093658447,877,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-013,No Action,No Action,True,Low,Low,True,7.437820672988892,867,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-062,Email Customer,Phone Call,False,Medium,High,False,4.4766435623168945,864,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-040,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,5.105218410491943,884,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-051,Email Customer,Phone Call,False,Medium,Medium,True,1.4610886573791504,891,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-064,Email Customer,Phone Call,False,Medium,Medium,True,3.3584649562835693,888,True,True
+gemini-3.1-flash-lite,gemini-3.1-flash-lite,CST-011,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.368800163269043,901,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-022,No Action,No Action,True,Low,Low,True,1.4402179718017578,750,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-060,No Action,No Action,True,Low,Low,True,1.7000601291656494,860,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-050,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.2589337825775146,777,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-005,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.2546429634094238,887,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-009,No Action,No Action,True,Low,Low,True,1.495664119720459,759,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-033,Email Customer,Phone Call,False,Medium,High,False,1.253291368484497,927,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-007,Phone Call,Phone Call,True,High,High,True,1.2502005100250244,840,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-010,Phone Call,Phone Call,True,High,High,True,1.6699209213256836,911,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-015,Email Customer,Phone Call,False,Medium,High,False,1.439579963684082,897,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-070,No Action,No Action,True,Low,Low,True,1.2561051845550537,757,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-025,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.789506196975708,830,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-042,Phone Call,Phone Call,True,High,High,True,1.3379364013671875,883,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-013,No Action,No Action,True,Low,Low,True,1.1842172145843506,840,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-062,Email Customer,Email Customer,True,Medium,Medium,True,1.4512815475463867,824,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-040,CRM Follow-Up,CRM Follow-Up,True,Low,Low,True,1.6142592430114746,774,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-051,Email Customer,Email Customer,True,Medium,Medium,True,1.4778854846954346,870,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-064,Email Customer,Email Customer,True,Medium,Medium,True,1.496086835861206,787,True,True
+gemini-2.5-flash-lite,gemini-2.5-flash-lite,CST-011,CRM Follow-Up,Parse Error,False,Low,Parse Error,False,0.0,0,False,False

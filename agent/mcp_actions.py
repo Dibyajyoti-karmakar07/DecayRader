@@ -84,6 +84,7 @@ def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
             "secondary_action": gemini_result.get("secondary_action"),
             "outreach_message": gemini_result.get("outreach_message"),
             "urgency"         : gemini_result.get("urgency"),
+            "model_used"      : gemini_result.get("model_used"),
 
             # Metadata
             "status"          : "pending",
