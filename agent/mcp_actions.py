@@ -86,11 +86,13 @@ def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
             "urgency"         : gemini_result.get("urgency"),
 
             # Metadata
-            "status": "pending",
-            "approved_at": datetime.now(timezone.utc).isoformat(),
-            "follow_up_date": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
-            "completed_at": None,
-            "note": None
+            "status"          : "pending",
+            "approved_at"     : datetime.now(timezone.utc).isoformat(),
+            "follow_up_date"  : (
+                datetime.now(timezone.utc) + timedelta(days=14)
+            ).isoformat(),
+            "completed_at"    : None,
+            "note"            : None
         }
 
         db["interventions"].insert_one(document)
@@ -114,10 +116,11 @@ def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
 # =========================================================
 # CHECK FOR DUPLICATE
 # =========================================================
+
 def already_processed(db, customer_id: str) -> bool:
     """
     Returns True only if a PENDING intervention exists.
-    Completed interventions allow re-processing.
+    Completed and cancelled interventions allow re-processing.
     """
 
     existing = db["interventions"].find_one({
@@ -126,6 +129,7 @@ def already_processed(db, customer_id: str) -> bool:
     })
 
     return existing is not None
+
 
 # =========================================================
 # UPDATE INTERVENTION STATUS
@@ -169,36 +173,44 @@ def update_intervention_status(
             f"Failed to update status for {customer_id}: {e}"
         )
         return False
+
+
 # =========================================================
-# DELETE INTERVENTION
+# DELETE INTERVENTION (SOFT DELETE)
 # =========================================================
 
 def delete_intervention(db, customer_id: str) -> bool:
     """
-    Permanently deletes a pending intervention.
-    Only deletes pending — completed ones stay as history.
+    Soft deletes a pending intervention by marking it cancelled.
+    Document stays in MongoDB for audit trail.
     """
 
     try:
-        result = db["interventions"].delete_one({
-            "customer_id": customer_id,
-            "status"     : "pending"
-        })
+        result = db["interventions"].update_one(
+            {
+                "customer_id": customer_id,
+                "status"     : "pending"
+            },
+            {"$set": {"status": "cancelled"}}
+        )
 
-        if result.deleted_count == 0:
+        if result.matched_count == 0:
             logger.warning(
                 f"No pending intervention found for {customer_id}"
             )
             return False
 
-        logger.info(f"Intervention deleted for {customer_id}")
+        logger.info(
+            f"Intervention cancelled for {customer_id}"
+        )
         return True
 
     except Exception as e:
         logger.error(
-            f"Failed to delete intervention for {customer_id}: {e}"
+            f"Failed to cancel intervention for {customer_id}: {e}"
         )
         return False
+
 
 # =========================================================
 # GET LAST COMPLETED INTERVENTION
@@ -220,6 +232,7 @@ def get_last_completed_intervention(db, customer_id: str) -> dict:
 
     return result
 
+
 # =========================================================
 # GET PENDING INTERVENTIONS
 # =========================================================
@@ -233,6 +246,7 @@ def get_pending_interventions(db) -> list:
     logger.info(f"Found {len(results)} pending interventions")
     return results
 
+
 # =========================================================
 # GET COMPLETED INTERVENTIONS
 # =========================================================
@@ -244,4 +258,18 @@ def get_completed_interventions(db) -> list:
 
     results = list(db["interventions"].find({"status": "completed"}))
     logger.info(f"Found {len(results)} completed interventions")
+    return results
+
+
+# =========================================================
+# GET CANCELLED INTERVENTIONS
+# =========================================================
+
+def get_cancelled_interventions(db) -> list:
+    """
+    Returns all interventions with status = cancelled.
+    """
+
+    results = list(db["interventions"].find({"status": "cancelled"}))
+    logger.info(f"Found {len(results)} cancelled interventions")
     return results
