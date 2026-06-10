@@ -7,14 +7,16 @@ risk explanation, intervention history, and executive summary.
 
 import os
 import sys
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
-from utils.db import connect_to_mongo
 
 _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
+
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+from utils.db import connect_to_mongo
+from agent.intelligence_client import generate_customer_intelligence
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
 # │  THEME CSS                                                              │
@@ -841,116 +843,8 @@ if has_risk:
 
 
 # ── 9c. AI Executive Analysis (Gemini) ────────────────────────────────────
-def _build_intelligence_prompt(
-    cust: pd.Series, risk: pd.Series | None, intv: pd.Series | None
-) -> str:
-    """Build a Gemini prompt for the customer intelligence report."""
-    company = _safe(cust.get("company_name"))
-    cid = _safe(cust.get("customer_id"))
-    tier = _safe(cust.get("tier"))
-    city = _safe(cust.get("city"))
-    acct_mgr = _safe(cust.get("account_manager"))
-
-    prompt = f"""You are a customer success intelligence analyst for a B2B distribution company.
-
-Generate an executive-level intelligence report for the following customer account.
-Write as if preparing a confidential account review for the customer success manager.
-Use business language. Avoid technical jargon. Be specific and actionable.
-
-CUSTOMER PROFILE:
-- Company: {company}
-- Customer ID: {cid}
-- Tier: {tier}
-- City: {city}
-- Account Manager: {acct_mgr}
-"""
-
-    if risk is not None:
-        prompt += f"""
-RISK ASSESSMENT:
-- Risk Score: {float(risk.get('risk_score', 0)):.1f} / 100
-- Risk Label: {_safe(risk.get('risk_label'))}
-- Business Risk Score: {float(risk.get('business_risk_score', 0)):.1f}
-- Anomaly Risk Score: {float(risk.get('anomaly_risk_score', 0)):.1f}
-- Is Anomaly: {bool(risk.get('is_anomaly', False))}
-
-BEHAVIORAL SIGNALS:
-- Average Order Value Change: {float(risk.get('aov_change_pct', 0)):+.1f}%
-- Purchase Gap Change: {float(risk.get('gap_change_pct', 0)):+.1f}%
-- Product Diversity Delta: {float(risk.get('diversity_delta', 0)):+.2f}
-"""
-
-    if intv is not None:
-        prompt += f"""
-EXISTING INTERVENTION DATA:
-- Decay Summary: {_safe(intv.get('decay_summary'), 'Not available')}
-- Priority Reason: {_safe(intv.get('priority_reason'), 'Not available')}
-- Likely Reason: {_safe(intv.get('likely_reason'), 'Not available')}
-- Primary Action: {_safe(intv.get('primary_action'), 'Not available')}
-- Secondary Action: {_safe(intv.get('secondary_action'), 'Not available')}
-- Urgency: {_safe(intv.get('urgency'), 'Not available')}
-"""
-
-    prompt += """
-Generate a JSON response with exactly these keys:
-
-{
-    "executive_summary": "2-3 sentence overview of the customer's current situation and trajectory",
-    "key_risk_drivers": "List the top 3 specific business factors driving this customer's risk score. Be concrete.",
-    "likely_business_situation": "What is probably happening inside this customer's business? Why are they disengaging?",
-    "potential_business_impact": "What revenue and relationship impact could occur if no action is taken?",
-    "retention_opportunities": "What specific opportunities exist to re-engage this customer?",
-    "recommended_next_actions": "3 specific, actionable steps the account manager should take this week",
-    "priority_level": "High, Medium, or Low",
-    "immediate_action": "The single most important thing to do right now",
-    "expected_outcome": "What should happen if the recommended actions are followed?"
-}
-
-Return ONLY valid JSON. No markdown formatting. No code fences.
-"""
-    return prompt
-
-
-def _generate_intelligence_report(
-    cust: pd.Series, risk: pd.Series | None, intv: pd.Series | None
-) -> dict | None:
-    """Call Gemini to generate a customer intelligence report."""
-    import json
-    import logging
-    from agent.gemini_client import setup_gemini_client, FALLBACK_MODELS
-
-    logger = logging.getLogger(__name__)
-
-    try:
-        client = setup_gemini_client()
-    except (Exception, SystemExit):
-        return None
-
-    prompt = _build_intelligence_prompt(cust, risk, intv)
-
-    for model in FALLBACK_MODELS:
-        try:
-            response = client.models.generate_content(
-                model=model,
-                contents=prompt,
-                config={"temperature": 0.3},
-            )
-            if not response.text:
-                continue
-
-            raw = response.text.strip()
-            if raw.startswith("```"):
-                raw = raw.replace("```json", "").replace("```", "").strip()
-
-            parsed = json.loads(raw)
-            parsed["_model_used"] = model
-            return parsed
-
-        except Exception as e:
-            logger.warning(f"Intelligence report: {model} failed: {e}")
-            continue
-
-    return None
+# (Prompt construction and Gemini handling moved to
+#  agent/intelligence_prompts.py + agent/intelligence_client.py)
 
 
 # Cache key for session state
@@ -965,7 +859,7 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
     if regenerate or _cache_key not in st.session_state:
         if has_risk or has_intv:
             with st.spinner("Generating intelligence report with Gemini AI..."):
-                report = _generate_intelligence_report(
+                report = generate_customer_intelligence(
                     cust_row,
                     risk_row if has_risk else None,
                     intv_first if has_intv else None,
@@ -994,7 +888,7 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
         )
     else:
         # Executive Summary
-        exec_sum = report.get("executive_summary", "")
+        exec_sum = report.get("executive_summary") or ""
         if exec_sum:
             st.markdown(
                 f"""
@@ -1012,8 +906,8 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
             )
 
         # Key Risk Drivers + Likely Business Situation (two columns)
-        risk_drivers = report.get("key_risk_drivers", "")
-        biz_situation = report.get("likely_business_situation", "")
+        risk_drivers = report.get("key_risk_drivers") or ""
+        biz_situation = report.get("likely_business_situation") or ""
 
         if risk_drivers or biz_situation:
             r1, r2 = st.columns(2, gap="medium")
@@ -1047,8 +941,8 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
                     )
 
         # Business Impact + Retention Opportunities (two columns)
-        biz_impact = report.get("potential_business_impact", "")
-        retention = report.get("retention_opportunities", "")
+        biz_impact = report.get("potential_business_impact") or ""
+        retention = report.get("retention_opportunities") or ""
 
         if biz_impact or retention:
             st.markdown('<div style="margin-top:.8rem"></div>', unsafe_allow_html=True)
@@ -1083,7 +977,7 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
                     )
 
         # Recommended Next Actions
-        actions = report.get("recommended_next_actions", "")
+        actions = report.get("recommended_next_actions") or ""
         if actions:
             st.markdown(
                 f"""
@@ -1099,7 +993,7 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
             )
 
         # Model attribution
-        model_used = report.get("_model_used", "Unknown")
+        model_used = report.get("_model_used") or "Unknown"
         st.markdown(
             f'<div style="font-size:.7rem;color:var(--text-muted);margin-top:.5rem;'
             f'font-family:\'JetBrains Mono\',monospace">Generated by {model_used}</div>',
@@ -1109,9 +1003,9 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
 
 # ── 9d. Executive Recommendation ──────────────────────────────────────────
 if report is not None:
-    priority = report.get("priority_level", "—")
-    immediate = report.get("immediate_action", "—")
-    outcome = report.get("expected_outcome", "—")
+    priority = report.get("priority_level") or "—"
+    immediate = report.get("immediate_action") or "—"
+    outcome = report.get("expected_outcome") or "—"
 
     priority_color = {
         "High": "var(--red)", "Medium": "var(--amber)", "Low": "var(--green)"

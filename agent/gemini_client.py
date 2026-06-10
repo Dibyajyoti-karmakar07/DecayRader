@@ -67,6 +67,22 @@ def setup_gemini_client():
 
 
 # =========================================================
+# PARSE UTILITY
+# =========================================================
+
+def parse_gemini_json(raw_text: str) -> dict:
+    """
+    Robustly strips markdown fences and parses JSON.
+    """
+    raw_text = raw_text.strip()
+    if raw_text.startswith("```"):
+        raw_text = raw_text.replace("```json", "")
+        raw_text = raw_text.replace("```", "")
+        raw_text = raw_text.strip()
+    return json.loads(raw_text)
+
+
+# =========================================================
 # CALL GEMINI
 # =========================================================
 
@@ -119,15 +135,7 @@ def call_gemini(client, customer: dict) -> dict:
                     )
                     break
 
-                raw_text = response.text.strip()
-
-                # Strip markdown code fences robustly
-                if raw_text.startswith("```"):
-                    raw_text = raw_text.replace("```json", "")
-                    raw_text = raw_text.replace("```", "")
-                    raw_text = raw_text.strip()
-
-                parsed = json.loads(raw_text)
+                parsed = parse_gemini_json(response.text)
 
                 # Validate all required keys are present
                 missing_keys = [
