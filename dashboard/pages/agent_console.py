@@ -1,747 +1,664 @@
 """
 dashboard/pages/agent_console.py
 ────────────────────────────────
-Agent Console — UI layer only.
-Processing runs in a background daemon thread (agent_worker.py).
-This page only reads shared state and renders progress.
-Processing survives page navigation.
+AI Intelligence Workspace — Radical Information Hierarchy Redesign.
+Tabs:
+1. Customer Deep Dive
+2. Tier Intelligence
+3. Portfolio Intelligence
+4. Intervention Agent
 """
 
-from __future__ import annotations
+import os
+import sys
+
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 import streamlit as st
+import pandas as pd
 from utils.db import connect_to_mongo
-
-AVAILABLE_ACTIONS = [
-    "Email Customer",
-    "Phone Call",
-    "Video Meeting",
-    "In-Person Visit",
-    "CRM Follow-Up",
-    "Notify Team",
-]
-
-PROCESSING_STEPS = [
-    "Customer profile loaded",
-    "Risk signals loaded",
-    "Gemini prompt generated",
-    "Gemini API called",
-    "Parsing response",
-    "Ready for review",
-]
-
-
-def _score_color(s: float) -> str:
-    if s >= 76:
-        return "#ff4d6a"
-    if s >= 51:
-        return "#f9cb28"
-    if s >= 31:
-        return "#007cf0"
-    return "#50e3c2"
-
-
-def _risk_badge(label: str) -> str:
-    cls = {
-        "Critical": "rl-critical",
-        "At Risk": "rl-atrisk",
-        "Watch": "rl-watch",
-        "Healthy": "rl-healthy",
-    }.get(str(label), "")
-    return f'<span class="rl {cls}">{label}</span>'
-
+from agent.intelligence_client import (
+    generate_customer_intelligence,
+    generate_tier_analysis,
+    generate_portfolio_analysis
+)
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  WORKER STATE ACCESS                                                    │
+# │  THEME CSS  (Vercel/Linear Dark Aesthetic)                              │
 # ╰──────────────────────────────────────────────────────────────────────────╯
-
-def _get_worker_state() -> dict | None:
-    """Get the shared worker state dict from session_state."""
-    return st.session_state.get("worker_state")
-
-
-def _is_worker_alive() -> bool:
-    """Check if the background worker thread is still running."""
-    ws = _get_worker_state()
-    if ws is None:
-        return False
-    t = ws.get("_thread")
-    return t is not None and t.is_alive()
-
-
-def _is_worker_active() -> bool:
-    """True if a worker exists and hasn't finished."""
-    ws = _get_worker_state()
-    if ws is None:
-        return False
-    return ws.get("running", False) or ws.get("phase") == "waiting_review"
-
-
-# ╭──────────────────────────────────────────────────────────────────────────╮
-# │  START / STOP                                                           │
-# ╰──────────────────────────────────────────────────────────────────────────╯
-
-def start_agent():
-    from agent.agent_runner import load_data, get_risky_customers
-    from utils.agent_worker import create_worker_state, start_worker
-
-    db = connect_to_mongo()
-    combined = load_data(db)
-    risky = get_risky_customers(combined)
-
-    if risky.empty:
-        st.markdown(
-            """
-            <div style="background:var(--bg-card);border:1px solid var(--border);
-                        border-radius:var(--r-md);padding:2rem;text-align:center;margin:1rem 0">
-                <div style="font-size:1.8rem;margin-bottom:.5rem">✅</div>
-                <div style="font-size:.95rem;color:var(--text-h);font-weight:600;
-                            margin-bottom:.2rem">All customers are healthy</div>
-                <div style="font-size:.82rem;color:var(--text-muted);line-height:1.5">
-                    No customers with a risk score above 50 were found.
-                    DecayRader is actively monitoring — check back later.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.stop()
-
-    customers = [r.to_dict() for _, r in risky.iterrows()]
-
-    try:
-        from agent.gemini_client import setup_gemini_client
-        gemini_client = setup_gemini_client()
-    except SystemExit:
-        st.error("GEMINI_API_KEY not found. Add it to a .env file in the project root.")
-        st.stop()
-
-    # Create shared state and start the background thread
-    state = create_worker_state(customers, len(customers))
-    st.session_state.worker_state = state
-    st.session_state.worker_db = db
-    st.session_state.worker_gemini = gemini_client
-
-    start_worker(state, gemini_client, db)
-    st.rerun()
-
-
-def stop_agent():
-    from utils.agent_worker import stop_worker
-    ws = _get_worker_state()
-    if ws:
-        stop_worker(ws)
-        ws["logs"].append("🛑 Agent stopped by user.")
-
-
-def approve_action(action: str | None):
-    from utils.agent_worker import approve_current
-    ws = _get_worker_state()
-    db = st.session_state.get("worker_db")
-    if ws and db:
-        approve_current(ws, action, db)
-
-
-# ╭──────────────────────────────────────────────────────────────────────────╮
-# │  RENDER HELPERS                                                         │
-# ╰──────────────────────────────────────────────────────────────────────────╯
-
-def render_customer_card(customer: dict, result: dict, dimmed: bool = False):
-    cid = customer.get("customer_id")
-    name = customer.get("company_name")
-    score = float(customer.get("risk_score", 0))
-    label = str(customer.get("risk_label", ""))
-    sc = _score_color(score)
-    dim_style = (
-        "opacity:0.35;filter:blur(1.2px);pointer-events:none;user-select:none"
-        if dimmed
-        else ""
-    )
-    dim_label = (
-        '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-        'z-index:10;font-size:.82rem;color:var(--text-muted);'
-        'font-family:JetBrains Mono,monospace;letter-spacing:.04em;'
-        'background:rgba(10,10,10,.7);padding:6px 16px;border-radius:100px">'
-        'PREVIOUS ANALYSIS</div>'
-        if dimmed
-        else ""
-    )
-
-    st.html(
-        f"""
-        <div style="position:relative;transition:opacity .4s,filter .4s;{dim_style}">
-            {dim_label}
-            <div style="background:var(--bg-card);border:1px solid var(--border);
-                        border-radius:var(--r-md);padding:1.3rem 1.5rem;
-                        margin-bottom:1rem;position:relative;overflow:hidden">
-                <div style="position:absolute;top:0;left:0;width:3px;height:100%;
-                            background:{sc}"></div>
-                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
-                            margin-bottom:.6rem">
-                    <span style="font-size:1.15rem;font-weight:600;color:var(--text-h)">
-                        {name}</span>
-                    <span style="font-size:1.3rem;font-weight:700;color:{sc};
-                                font-family:'JetBrains Mono',monospace">
-                        {score:.1f}</span>
-                    {_risk_badge(label)}
-                    <span style="font-size:.78rem;color:var(--text-muted)">{cid}</span>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;
-                            margin-top:.6rem">
-                    <div>
-                        <div style="font-size:.7rem;color:var(--text-muted);
-                                    text-transform:uppercase;letter-spacing:.06em;
-                                    font-family:'JetBrains Mono',monospace;margin-bottom:2px">
-                            Decay Summary</div>
-                        <div style="font-size:.88rem;color:var(--text-p);line-height:1.6">
-                            {result.get('decay_summary', 'N/A')}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:.7rem;color:var(--text-muted);
-                                    text-transform:uppercase;letter-spacing:.06em;
-                                    font-family:'JetBrains Mono',monospace;margin-bottom:2px">
-                            Likely Reason</div>
-                        <div style="font-size:.88rem;color:var(--text-p);line-height:1.6">
-                            {result.get('likely_reason', 'N/A')}</div>
-                    </div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;
-                            margin-top:.8rem">
-                    <div>
-                        <div style="font-size:.7rem;color:var(--text-muted);
-                                    text-transform:uppercase;letter-spacing:.06em;
-                                    font-family:'JetBrains Mono',monospace;margin-bottom:2px">
-                            Recommended Action</div>
-                        <div style="font-size:.95rem;font-weight:600;color:var(--cyan)">
-                            {result.get('primary_action', 'N/A')}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:.7rem;color:var(--text-muted);
-                                    text-transform:uppercase;letter-spacing:.06em;
-                                    font-family:'JetBrains Mono',monospace;margin-bottom:2px">
-                            Secondary Action</div>
-                        <div style="font-size:.88rem;color:var(--text-p)">
-                            {result.get('secondary_action', 'N/A')}</div>
-                    </div>
-                </div>
-                <div style="margin-top:.8rem">
-                    <div style="font-size:.7rem;color:var(--text-muted);
-                                text-transform:uppercase;letter-spacing:.06em;
-                                font-family:'JetBrains Mono',monospace;margin-bottom:2px">
-                        Urgency</div>
-                    <div style="font-size:.88rem;font-weight:600">{result.get('urgency', 'N/A')}</div>
-                </div>
-            </div>
-        </div>
-        """
-    )
-
-
-def render_processing_panel(
-    customer_name: str = "",
-    current_idx: int = 0,
-    total: int = 0,
-    step: int = 4,
-):
-    steps_html = ""
-    for i, step_name in enumerate(PROCESSING_STEPS):
-        is_last = i == len(PROCESSING_STEPS) - 1
-        if i < step:
-            row_class = "proc-step step-completed"
-            row_opacity = "0.55"
-        elif i == step:
-            row_class = "proc-step step-active"
-            row_opacity = "1.0"
-        else:
-            row_class = "proc-step step-future"
-            row_opacity = "0.35"
-
-        steps_html += f"""
-        <div class="{row_class}" data-step="{i}" style="opacity:{row_opacity}">
-            <div class="proc-step-col">
-                <div class="proc-step-dot">
-                    <span class="check-icon">&#10003;</span>
-                    <span class="pulse-icon"><span class="step-pulse"></span></span>
-                    <span class="circle-icon">&#9675;</span>
-                </div>
-                {'' if is_last else '<div class="proc-step-line"></div>'}
-            </div>
-            <div class="proc-step-body" style="padding-bottom:{'0' if is_last else '6px'}">
-                <div class="proc-step-label">{step_name}</div>
-            </div>
-        </div>
-        """
-
-    st.html(
-        f"""
-        <style>
-        .proc-panel {{
-            max-width:650px; margin:1rem auto 2.5rem; padding:0 1rem;
-        }}
-        .proc-header {{
-            text-align:center; margin-bottom:1.5rem;
-        }}
-        .proc-badge {{
-            display:inline-flex; align-items:center; gap:7px;
-            background:rgba(0,223,216,.07); border:1px solid rgba(0,223,216,.14);
-            border-radius:100px; padding:3px 14px;
-            font-size:.68rem; color:var(--cyan);
-            font-family:JetBrains Mono,monospace; letter-spacing:.02em;
-            margin-bottom:.65rem; text-transform:uppercase;
-        }}
-        .proc-badge-dot {{
-            display:inline-block; width:7px; height:7px; border-radius:50%;
-            background:var(--cyan);
-            animation:think-pulse 1.4s ease-in-out infinite;
-        }}
-        .proc-customer-name {{
-            font-size:.9rem; color:var(--text-p); font-weight:400;
-        }}
-        .proc-counter {{
-            font-size:.7rem; color:var(--text-muted); margin-top:.2rem;
-            font-family:JetBrains Mono,monospace;
-        }}
-        .proc-card {{
-            background:var(--bg-card); border:1px solid var(--border);
-            border-radius:var(--r-md); padding:1.15rem 1.35rem;
-        }}
-        .proc-step {{
-            display:flex; gap:14px; transition:opacity .4s;
-        }}
-        .proc-step-col {{
-            display:flex; flex-direction:column; align-items:center;
-            width:28px; flex-shrink:0;
-        }}
-        .proc-step-dot {{
-            width:28px; height:28px; border-radius:50%; display:flex;
-            align-items:center; justify-content:center; flex-shrink:0;
-            border:1.5px solid; transition:border-color .4s,background .4s;
-            font-size:.8rem;
-        }}
-        .proc-step-line {{
-            width:1.5px; flex:1; min-height:22px; margin:5px 0 3px;
-            transition:background .4s,opacity .4s;
-        }}
-        .proc-step-body {{
-            flex:1; padding-top:4px;
-        }}
-        .proc-step-label {{
-            font-size:.85rem; letter-spacing:-.01em;
-            transition:color .4s,font-weight .4s;
-        }}
-        .check-icon {{ display:none; color:var(--green); font-weight:600; font-size:.82rem; }}
-        .pulse-icon {{ display:none; }}
-        .circle-icon {{ color:#2a2a2a; font-size:.72rem; }}
-        .step-completed .check-icon {{ display:block !important; }}
-        .step-completed .circle-icon {{ display:none !important; }}
-        .step-completed .proc-step-dot {{
-            background:rgba(80,227,194,.15); border-color:var(--green);
-        }}
-        .step-completed .proc-step-label {{
-            color:var(--text-muted); font-weight:400;
-        }}
-        .step-completed .proc-step-line {{
-            background:var(--green); opacity:0.8;
-        }}
-        .step-active .pulse-icon {{ display:block !important; }}
-        .step-active .circle-icon {{ display:none !important; }}
-        .step-active .proc-step-dot {{
-            background:transparent; border-color:var(--cyan);
-        }}
-        .step-active .proc-step-label {{
-            color:var(--text-h); font-weight:500;
-        }}
-        .step-active .proc-step-line {{
-            background:var(--cyan); opacity:0.3;
-        }}
-        .step-future .proc-step-dot {{
-            background:transparent; border-color:#2a2a2a;
-        }}
-        .step-future .proc-step-label {{
-            color:#333; font-weight:400;
-        }}
-        .step-future .proc-step-line {{
-            background:#1a1a1a; opacity:0.3;
-        }}
-        .proc-status {{
-            text-align:center; font-size:.78rem; color:var(--text-muted);
-            font-family:JetBrains Mono,monospace; margin-top:.65rem;
-            padding:2px 0; letter-spacing:.01em;
-        }}
-        .proc-status-dot {{
-            display:inline-block; width:4px; height:4px; border-radius:50%;
-            background:var(--text-muted); margin-left:6px;
-            animation:st-dot 1s ease-in-out infinite;
-        }}
-        @keyframes st-dot {{
-            0%,100%{{opacity:1}}
-            50%{{opacity:.2}}
-        }}
-        </style>
-
-        <div class="proc-panel">
-            <div class="proc-header">
-                <div class="proc-badge">
-                    <span class="proc-badge-dot"></span>
-                    Analyzing
-                </div>
-                <div class="proc-customer-name">{customer_name}</div>
-                <div class="proc-counter">Customer {current_idx + 1} of {total}</div>
-            </div>
-
-            <div class="proc-card">
-                {steps_html}
-            </div>
-
-            <div class="proc-status">
-                Analyzing customer signals and generating intervention recommendation...<span class="proc-status-dot"></span>
-            </div>
-        </div>
-        """
-    )
-
-
-# ── Page ──────────────────────────────────────────────────────────────────────
-
 st.markdown(
     """
     <style>
-    .rl { display: inline-block; padding: 2px 10px; border-radius: 100px;
-          font-size: 0.72rem; font-weight: 500;
-          font-family: 'JetBrains Mono', monospace; }
-    .rl-critical  { background: rgba(255,77,106,.12); color: #ff4d6a; }
-    .rl-atrisk    { background: rgba(249,203,40,.12); color: #f9cb28; }
-    .rl-watch     { background: rgba(0,124,240,.12);  color: #007cf0; }
-    .rl-healthy   { background: rgba(80,227,194,.12); color: #50e3c2; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    .thinking-dot {
-        display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-        background: var(--cyan);
-        animation: think-pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes think-pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.3; transform: scale(0.7); }
-    }
-
-    .step-pulse {
-        display: inline-block; width: 9px; height: 9px; border-radius: 50%;
-        background: var(--cyan);
-        animation: step-pulse 1.6s ease-in-out infinite;
-    }
-    @keyframes step-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(0,223,216,.4); }
-        50% { box-shadow: 0 0 0 6px rgba(0,223,216,0); }
+    :root {
+        --bg-page:      #0a0a0a;
+        --bg-surface:   #111111;
+        --bg-card:      #171717;
+        --border:       #222222;
+        --border-hover: #333333;
+        --text-h:       #ffffff;
+        --text-p:       #a1a1a1;
+        --text-muted:   #888888;
+        --cyan:         #00dfd8;
+        --blue:         #0070f3;
+        --amber:        #f5a623;
+        --red:          #ee0000;
+        --green:        #50e3c2;
     }
 
-    .toast-save {
-        max-width:420px; margin:0 auto 1rem;
-        background:rgba(80,227,194,.08); border:1px solid rgba(80,227,194,.18);
-        border-radius:var(--r-md); padding:1rem 1.25rem;
-        transition:opacity .3s,transform .3s;
-        position:relative; overflow:hidden;
+    /* Base Typography */
+    h1, h2, h3, .text-h {
+        font-family: 'Inter', system-ui, sans-serif;
+        letter-spacing: -0.03em;
+        color: var(--text-h);
     }
-    .toast-save::after {
-        content:''; position:absolute; bottom:0; left:0; height:2px;
-        background:var(--green); border-radius:2px;
-        animation:toast-shrink 2.2s linear forwards;
+    
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Layout Elements */
+    .hero-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
     }
-    @keyframes toast-shrink {
-        from { width:100%; }
-        to { width:0%; }
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+    }
+    .hero-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
     }
 
-    [data-testid="stStatusWidget"] > div > div:first-child { display: none; }
+    /* Cards */
+    .v-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    .v-card-hero {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-top: 2px solid var(--cyan);
+        border-radius: 8px;
+        padding: 2rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    }
+    .v-eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .v-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-h);
+        line-height: 1.3;
+    }
+    .v-p {
+        font-size: 0.95rem;
+        color: var(--text-p);
+        line-height: 1.6;
+    }
+
+    /* KPIs */
+    .kpi-row { display: flex; gap: 2rem; margin-bottom: 2rem; }
+    .kpi-block { display: flex; flex-direction: column; }
+    .kpi-num { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 600; color: var(--text-h); line-height: 1; letter-spacing: -0.05em; }
+    .kpi-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.5rem; letter-spacing: 0.05em; }
+
+    /* Badges */
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 500;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+    }
+    .badge-red { background: rgba(238,0,0,0.1); color: var(--red); border-color: rgba(238,0,0,0.2); }
+    .badge-amber { background: rgba(245,166,35,0.1); color: var(--amber); border-color: rgba(245,166,35,0.2); }
+    .badge-green { background: rgba(80,227,194,0.1); color: var(--green); border-color: rgba(80,227,194,0.2); }
+    .badge-cyan { background: rgba(0,223,216,0.1); color: var(--cyan); border-color: rgba(0,223,216,0.2); }
+    .badge-neutral { background: var(--border); color: var(--text-p); border-color: var(--border-hover); }
+
+    /* Data Tables */
+    .v-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .v-table th { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; font-weight: 400; }
+    .v-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-p); }
+    .v-table tr:hover td { background: rgba(255,255,255,0.02); }
+    
+    /* Copilot Process Steps */
+    .proc-step { display:flex; gap:14px; transition:opacity .4s; }
+    .proc-step-col { display:flex; flex-direction:column; align-items:center; width:28px; flex-shrink:0; }
+    .proc-step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid; font-size:.8rem; }
+    .proc-step-line { width:1px; flex:1; min-height:22px; margin:5px 0 3px; }
+    .proc-step-label { font-size:.85rem; padding-top:4px; }
+    
+    .step-completed .proc-step-dot { background:rgba(80,227,194,.1); border-color:var(--green); color:var(--green); }
+    .step-completed .proc-step-line { background:var(--green); opacity:0.5; }
+    .step-completed .proc-step-label { color:var(--text-muted); }
+    
+    .step-active .proc-step-dot { background:transparent; border-color:var(--cyan); }
+    .step-active .proc-step-line { background:var(--cyan); opacity:0.3; }
+    .step-active .proc-step-label { color:var(--text-h); font-weight:500; }
+    
+    .step-future .proc-step-dot { background:transparent; border-color:var(--border); color:transparent; }
+    .step-future .proc-step-line { background:var(--border); }
+    .step-future .proc-step-label { color:var(--text-muted); }
+
+    .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 0 rgba(0,223,216,.4); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,223,216,.4); } 70% { box-shadow: 0 0 0 6px rgba(0,223,216,0); } 100% { box-shadow: 0 0 0 0 rgba(0,223,216,0); } }
+
+    /* Shimmer Skeleton */
+    .shimmer {
+        background: #1e1e1e;
+        background-image: linear-gradient(to right, #1e1e1e 0%, #2a2a2a 20%, #1e1e1e 40%, #1e1e1e 100%);
+        background-repeat: no-repeat;
+        background-size: 800px 100%; 
+        animation-duration: 1.5s;
+        animation-fill-mode: forwards; 
+        animation-iteration-count: infinite;
+        animation-name: placeholderShimmer;
+        animation-timing-function: linear;
+        border-radius: 4px;
+    }
+    @keyframes placeholderShimmer {
+        0% { background-position: -468px 0; }
+        100% { background-position: 468px 0; }
+    }
+    
+    /* Hide Streamlit Global Spinner to prevent loading state leaking across tabs */
+    [data-testid="stStatusWidget"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-st.markdown(
-    """
-    <h1 style="font-size:1.55rem;font-weight:600;margin-bottom:0.1rem">🤖 Agent Console</h1>
-    <p style="color:var(--text-muted);font-size:.85rem;margin-top:0">
-        Run the DecayRader AI agent on at-risk customers and choose
-        interventions — one customer at a time.
-    </p>
-    """,
-    unsafe_allow_html=True,
-)
-
-st.markdown("---")
-
+st.title("Intelligence Workspace")
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  READ WORKER STATE                                                      │
+# │  DATA LOADING                                                           │
 # ╰──────────────────────────────────────────────────────────────────────────╯
-ws = _get_worker_state()
-worker_alive = _is_worker_alive()
-worker_active = _is_worker_active()
+@st.cache_data(ttl=120)
+def load_intelligence_data():
+    db = connect_to_mongo()
+    cust_df = pd.DataFrame(list(db["Customers"].find({}, {"_id": 0})))
+    risk_df = pd.DataFrame(list(db["risk_scores"].find({}, {"_id": 0})))
+    intv_df = pd.DataFrame(list(db["interventions"].find({}, {"_id": 0})))
+    
+    if cust_df.empty or risk_df.empty:
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        
+    merged = pd.merge(cust_df, risk_df, on="customer_id", how="left")
+    risky = merged[merged["risk_score"] > 50].copy()
+    risky.sort_values("risk_score", ascending=False, inplace=True)
+    return cust_df, risk_df, intv_df, merged
 
+cust_df, risk_df, intv_df, merged_df = load_intelligence_data()
 
-# ── IDLE STATE ──────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────────────────────────────────────────╮
+# │  TABS DEFINITION                                                        │
+# ╰──────────────────────────────────────────────────────────────────────────╯
+tab1, tab2, tab3, tab4 = st.tabs([
+    "Customer Deep Dive", 
+    "Tier Intelligence", 
+    "Portfolio Intelligence", 
+    "🤖 Intervention Agent"
+])
 
-if ws is None or (not worker_active and ws.get("finished") is not True):
-    st.markdown(
-        """
-        <div style="background:var(--bg-card);border:1px solid var(--border);
-                    border-radius:var(--r-md);padding:1.8rem 2rem;margin-bottom:1.2rem">
-            <div style="font-size:.95rem;color:var(--text-h);font-weight:600;
-                        margin-bottom:.6rem">How it works</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
-                <div style="font-size:.82rem;color:var(--text-p);line-height:1.5">
-                    <span style="color:var(--cyan);font-weight:600">1.</span>
-                    Load at-risk customers from behavioral signals</div>
-                <div style="font-size:.82rem;color:var(--text-p);line-height:1.5">
-                    <span style="color:var(--cyan);font-weight:600">2.</span>
-                    Gemini AI analyzes each customer's decay pattern</div>
-                <div style="font-size:.82rem;color:var(--text-p);line-height:1.5">
-                    <span style="color:var(--cyan);font-weight:600">3.</span>
-                    AI recommends personalized retention interventions</div>
-                <div style="font-size:.82rem;color:var(--text-p);line-height:1.5">
-                    <span style="color:var(--cyan);font-weight:600">4.</span>
-                    You approve, override, or skip each recommendation</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+def _badge_html(score: float) -> str:
+    if score >= 76: return '<span class="badge badge-red">Critical</span>'
+    if score >= 51: return '<span class="badge badge-amber">At Risk</span>'
+    if score >= 31: return '<span class="badge badge-cyan">Watch</span>'
+    return '<span class="badge badge-green">Healthy</span>'
 
-    if st.button("🚀 Run Agent", type="primary", use_container_width=False):
-        start_agent()
-
-
-# ── RUNNING STATE ───────────────────────────────────────────────────────────
-
-if ws is not None and worker_active:
-    # Show toast from background worker
-    if ws.get("toast"):
-        t = ws["toast"]
-        st.toast(
-            f"**✅ Intervention Saved** — {t['action']} recorded for **{t['customer_name']}**"
-        )
-        ws["toast"] = None
-
-    total = ws["total"]
-    idx = ws["current_idx"]
-    phase = ws["phase"]
-
-    # Show previous customer (dimmed)
-    if ws.get("prev_customer") and ws.get("prev_result"):
-        render_customer_card(ws["prev_customer"], ws["prev_result"], dimmed=True)
-
-    # Counter
-    st.markdown(
-        f'<div style="color:var(--text-muted);font-size:.82rem;margin-bottom:.75rem">'
-        f"Customer <strong style='color:var(--text-h)'>{idx + 1}</strong>"
-        f" of <strong style='color:var(--text-h)'>{total}</strong></div>",
-        unsafe_allow_html=True,
-    )
-
-    # ── Processing / Calling phase (Gemini is working in the background) ──
-    if phase in ("processing", "calling"):
-        customer_obj = ws.get("current_customer")
-        cname = customer_obj.get("company_name", "") if customer_obj else ""
-
-        render_processing_panel(
-            customer_name=cname,
-            current_idx=idx,
-            total=total,
-            step=ws.get("processing_step", 4),
-        )
-
-        if st.button("⏹ Stop Agent", key="stop_processing", type="primary"):
-            stop_agent()
-            st.rerun()
-
-        # Non-blocking auto-refresh: fragment reruns itself every 2s,
-        # then triggers a full page rerun to pick up worker state changes.
-        @st.fragment(run_every=2)
-        def _poll_worker():
-            _ws = st.session_state.get("worker_state")
-            if _ws and _ws.get("phase") not in ("processing", "calling"):
-                st.rerun()
-        _poll_worker()
-
-    # ── Waiting for review (Gemini finished, human must decide) ───────────
-    elif phase == "waiting_review":
-        customer = ws["current_customer"]
-        result = ws["gemini_result"]
-
-        if customer and result:
-            render_customer_card(customer, result, dimmed=False)
-
-            st.markdown(
-                '<div style="font-size:.82rem;font-weight:600;color:var(--text-h);'
-                'margin-bottom:.5rem;margin-top:1.2rem">Choose an action:</div>',
-                unsafe_allow_html=True,
-            )
-
-            col_actions = st.columns(3)
-            for i, action in enumerate(AVAILABLE_ACTIONS):
-                recommended = result.get("primary_action", "")
-                is_rec = action == recommended
-                label = f"⭐ {action}" if is_rec else action
-                with col_actions[i % 3]:
-                    if st.button(label, key=f"act_{i}", use_container_width=True,
-                                 type="primary" if is_rec else "secondary"):
-                        approve_action(action)
-                        st.rerun()
-
-            with col_actions[2]:
-                if st.button("⏭️ Skip", key="act_skip", use_container_width=True):
-                    approve_action(None)
-                    st.rerun()
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            if st.button("⏹ Stop Agent", type="primary", use_container_width=False):
-                stop_agent()
-                st.rerun()
-
-        elif idx < total:
-            st.markdown(
-                '<div style="font-size:.88rem;color:var(--text-muted);font-style:italic">' 
-                'Gemini could not generate a result for this customer. '
-                'The agent will automatically advance.</div>',
-                unsafe_allow_html=True,
-            )
-
-    # ── Advance phase (brief transition before next customer) ─────────────
-    elif phase == "advance":
-        st.markdown(
-            '<div style="text-align:center;padding:1rem 0">' 
-            '<div style="font-size:.82rem;color:var(--text-muted);'
-            'font-family:JetBrains Mono,monospace">' 
-            '⏳ Loading next customer…</div></div>',
-            unsafe_allow_html=True,
-        )
-
-        @st.fragment(run_every=1)
-        def _poll_advance():
-            _ws = st.session_state.get("worker_state")
-            if _ws and _ws.get("phase") != "advance":
-                st.rerun()
-        _poll_advance()
-
-
-# ── FINISHED STATE ──────────────────────────────────────────────────────────
-
-if ws is not None and ws.get("finished") and not worker_active:
-    st.markdown("---")
-
-    total = ws.get("total", 0)
-    saved = ws.get("saved_count", 0)
-    skipped = ws.get("skipped_count", 0)
-    failed = ws.get("failed_count", 0)
-    already = ws.get("already_count", 0)
-
-    if ws.get("stopped"):
-        st.markdown(
-            '<div style="background:rgba(249,203,40,.06);border:1px solid rgba(249,203,40,.15);'
-            'border-radius:var(--r-md);padding:1rem 1.3rem;margin-bottom:1rem">'
-            '<div style="font-size:.95rem;font-weight:600;color:var(--amber);margin-bottom:.2rem">'
-            '🛑 Agent Run Stopped</div>'
-            f'<div style="font-size:.82rem;color:var(--text-p)">'
-            f'Processed <strong style="color:var(--text-h)">{saved + skipped + failed}</strong> of '
-            f'<strong style="color:var(--text-h)">{total}</strong> customers before stopping.</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
+# ==============================================================================
+# TAB 1: CUSTOMER DEEP DIVE
+# ==============================================================================
+with tab1:
+    if merged_df.empty:
+        st.warning("No customer data available.")
     else:
-        st.markdown(
-            '<div style="background:rgba(80,227,194,.06);border:1px solid rgba(80,227,194,.15);'
-            'border-radius:var(--r-md);padding:1rem 1.3rem;margin-bottom:1rem">'
-            '<div style="font-size:.95rem;font-weight:600;color:var(--green);margin-bottom:.2rem">'
-            '✅ Agent Run Complete</div>'
-            f'<div style="font-size:.82rem;color:var(--text-p)">'
-            f'Successfully analyzed <strong style="color:var(--text-h)">{total}</strong> at-risk customers. '
-            f'<strong style="color:var(--green)">{saved}</strong> interventions saved to database.</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    # Summary cards
-    st.markdown(
-        f"""
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:.8rem 0 1.2rem">
-            <div style="background:var(--bg-card);border:1px solid var(--border);
-                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
-                <div style="font-size:1.5rem;font-weight:700;color:var(--cyan);line-height:1">{total}</div>
-                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
-                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
-                            letter-spacing:.06em">Analyzed</div>
-            </div>
-            <div style="background:var(--bg-card);border:1px solid var(--border);
-                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
-                <div style="font-size:1.5rem;font-weight:700;color:var(--green);line-height:1">{saved}</div>
-                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
-                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
-                            letter-spacing:.06em">Saved</div>
-            </div>
-            <div style="background:var(--bg-card);border:1px solid var(--border);
-                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
-                <div style="font-size:1.5rem;font-weight:700;color:var(--text-muted);line-height:1">{skipped + already}</div>
-                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
-                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
-                            letter-spacing:.06em">Skipped</div>
-            </div>
-            <div style="background:var(--bg-card);border:1px solid var(--border);
-                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
-                <div style="font-size:1.5rem;font-weight:700;color:{'var(--red)' if failed > 0 else 'var(--text-muted)'};line-height:1">{failed}</div>
-                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
-                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
-                            letter-spacing:.06em">Failed</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Execution log
-    logs = ws.get("logs", [])
-    if logs:
-        with st.expander(f"📋 Execution Log ({len(logs)} entries)", expanded=True):
-            log_html = ""
-            for log in logs:
-                # Color code log entries
-                if log.startswith("✅"):
-                    color = "var(--green)"
-                elif log.startswith("⚠️") or log.startswith("❌"):
-                    color = "var(--red)"
-                elif log.startswith("⏭️"):
-                    color = "var(--text-muted)"
-                elif log.startswith("🛑"):
-                    color = "var(--amber)"
-                elif log.startswith("💥"):
-                    color = "var(--pink)"
-                else:
-                    color = "var(--text-p)"
-                log_html += (
-                    f'<div style="font-size:.8rem;color:{color};padding:3px 0;'
-                    f'font-family:\'JetBrains Mono\',monospace;line-height:1.5">{log}</div>'
+        st.markdown("<div class='v-eyebrow' style='margin-bottom:0.5rem;'>Search Directory</div>", unsafe_allow_html=True)
+        search_query = st.text_input("Search Customer", placeholder="Type company name...", label_visibility="collapsed")
+        
+        cust_list = merged_df.sort_values("risk_score", ascending=False)
+        if search_query:
+            cust_list = cust_list[cust_list["company_name"].str.contains(search_query, case=False, na=False)]
+            
+        if cust_list.empty:
+            st.info("No customers match your search.")
+        else:
+            options = [f"{r['company_name']} (Risk: {r.get('risk_score',0):.1f})" for _, r in cust_list.iterrows()]
+            selected_opt = st.selectbox("Select Customer", options, label_visibility="collapsed")
+            
+            if selected_opt:
+                idx = options.index(selected_opt)
+                row = cust_list.iloc[idx]
+                cid = row["customer_id"]
+                
+                # Check for cached timestamp
+                ts_key = f"ts_deep_dive_{cid}"
+                
+                # Hero Header
+                st.markdown(
+                    f"""
+                    <div class="hero-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+                        <div>
+                            <div class="hero-title">{row['company_name']}</div>
+                            <div class="hero-subtitle mono">{cid} • {row['tier']} Tier • {row['city']}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="mono" style="font-size:2.5rem; font-weight:600; line-height:1; color:var(--text-h);">{row.get('risk_score',0):.1f}</div>
+                            <div style="margin-top:0.25rem;">{_badge_html(row.get('risk_score',0))}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True
                 )
-            st.markdown(log_html, unsafe_allow_html=True)
+                
+                with st.spinner("Generating deep dive..."):
+                    intv_row = None
+                    if not intv_df.empty:
+                        cust_intvs = intv_df[intv_df["customer_id"] == cid]
+                        if not cust_intvs.empty:
+                            intv_row = cust_intvs.iloc[0]
+                    
+                    report = generate_customer_intelligence(row, row, intv_row)
+                    if ts_key not in st.session_state:
+                        import datetime
+                        st.session_state[ts_key] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                    
+                if report:
+                    st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key]}</div>", unsafe_allow_html=True)
+                    
+                    # Executive Diagnosis & Hero Action
+                    st.markdown(
+                        f"""
+                        <div class="v-card">
+                            <div class="v-eyebrow">Executive Diagnosis</div>
+                            <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{report.get('executive_diagnosis', '')}</div>
+                        </div>
+                        
+                        <div class="v-card-hero">
+                            <div class="v-eyebrow" style="color:var(--cyan);">Retention Strategy</div>
+                            <div class="v-value">{report.get('retention_strategy', 'Review account status.')}</div>
+                            <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+                                <span class="v-eyebrow">Expected Outcome</span>
+                                <div class="v-p" style="margin-top:0.25rem;">{report.get('expected_outcome', '')}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
+                    
+                    with st.expander("View Detailed Analysis"):
+                        st.write("**Likely Business Situation**\n\n" + report.get("likely_business_situation", "N/A"))
+                        st.write("**Behavioral Changes**\n\n" + report.get("behavioral_changes", "N/A"))
+                        st.write("**Revenue Risk Assessment**\n\n" + report.get("revenue_risk_assessment", "N/A"))
+                else:
+                    st.error("Failed to generate report.")
+
+# ==============================================================================
+# TAB 2: TIER INTELLIGENCE
+# ==============================================================================
+with tab2:
+    if merged_df.empty:
+        st.warning("No data.")
     else:
+        st.markdown("<div class='v-eyebrow' style='margin-bottom:0.5rem;'>Select Tier Segment</div>", unsafe_allow_html=True)
+        selected_tier = st.selectbox("Select Tier", ["Gold", "Silver", "Bronze"], label_visibility="collapsed")
+        tier_df = merged_df[merged_df["tier"] == selected_tier]
+        
+        if tier_df.empty:
+            st.info(f"No customers in {selected_tier} tier.")
+        else:
+            ts_key_tier = f"ts_tier_{selected_tier}"
+            avg_risk = tier_df["risk_score"].mean()
+            at_risk = len(tier_df[tier_df["risk_score"] > 50])
+            total = len(tier_df)
+            
+            st.markdown(
+                f"""
+                <div class="kpi-row" style="margin-top:1.5rem;">
+                    <div class="kpi-block"><div class="kpi-num">{total}</div><div class="kpi-lbl">Customers</div></div>
+                    <div class="kpi-block"><div class="kpi-num">{avg_risk:.1f}</div><div class="kpi-lbl">Avg Risk</div></div>
+                    <div class="kpi-block"><div class="kpi-num" style="color:var(--red);">{at_risk}</div><div class="kpi-lbl">At Risk</div></div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            
+            with st.spinner(f"Analyzing {selected_tier} tier..."):
+                report = generate_tier_analysis(selected_tier, tier_df)
+                if ts_key_tier not in st.session_state:
+                    import datetime
+                    st.session_state[ts_key_tier] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                
+            if report:
+                st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_tier]}</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div class="v-card">
+                        <div class="v-eyebrow">Tier Health Assessment</div>
+                        <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{report.get('tier_health_assessment', '')}</div>
+                    </div>
+                    <div class="v-card-hero">
+                        <div class="v-eyebrow" style="color:var(--cyan);">Strategic Recommendation</div>
+                        <div class="v-value">{report.get('strategic_recommendation', '')}</div>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("<div class='v-card'><div class='v-eyebrow'>Primary Decay Drivers</div><div class='v-p'>" + report.get('primary_decay_drivers', '') + "</div></div>", unsafe_allow_html=True)
+                with col2:
+                    st.markdown("<div class='v-card'><div class='v-eyebrow'>Expected Business Impact</div><div class='v-p'>" + report.get('expected_business_impact', '') + "</div></div>", unsafe_allow_html=True)
+
+                with st.expander("View Tier Diagnostics"):
+                    st.write("**Behavioral Pattern Analysis**\n\n" + report.get("behavioral_pattern_analysis", ""))
+                    st.write("**Healthy vs At-Risk Accounts**\n\n" + report.get("healthy_vs_at_risk", ""))
+                
+                st.markdown("<div class='v-eyebrow' style='margin-top:2rem;'>Top At-Risk Accounts</div>", unsafe_allow_html=True)
+                top_accs = tier_df.sort_values("risk_score", ascending=False).head(5)
+                table_html = "<table class='v-table'><thead><tr><th>Company</th><th>ID</th><th>Risk Score</th><th>Label</th></tr></thead><tbody>"
+                for _, r in top_accs.iterrows():
+                    table_html += f"<tr><td>{r['company_name']}</td><td class='mono'>{r['customer_id']}</td><td class='mono'>{r['risk_score']:.1f}</td><td>{_badge_html(r['risk_score'])}</td></tr>"
+                table_html += "</tbody></table>"
+                st.markdown(f"<div class='v-card' style='padding:0;'>{table_html}</div>", unsafe_allow_html=True)
+
+# ==============================================================================
+# TAB 3: PORTFOLIO INTELLIGENCE
+# ==============================================================================
+with tab3:
+    if merged_df.empty:
+        st.warning("No data.")
+    else:
+        ts_key_port = "ts_portfolio_intel"
+        total_cust = len(merged_df)
+        total_risk = len(merged_df[merged_df["risk_score"] > 50])
+        health = 100 - (total_risk / total_cust * 100) if total_cust > 0 else 0
+        
         st.markdown(
-            '<div style="font-size:.82rem;color:var(--text-muted);font-style:italic">' 
-            'No log entries recorded.</div>',
-            unsafe_allow_html=True,
+            f"""
+            <div class="hero-header" style="text-align:center;">
+                <div class="mono" style="font-size:3.5rem; font-weight:600; color:var(--text-h); line-height:1; letter-spacing:-0.05em;">{health:.1f}%</div>
+                <div class="v-eyebrow" style="margin-top:0.75rem;">Portfolio Health Score</div>
+            </div>
+            """, unsafe_allow_html=True
         )
+        
+        with st.spinner("Analyzing portfolio risk..."):
+            top_risk_df = merged_df[merged_df["risk_score"] > 50]
+            report = generate_portfolio_analysis(top_risk_df)
+            if ts_key_port not in st.session_state:
+                import datetime
+                st.session_state[ts_key_port] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+            
+        if report:
+            st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_port]}</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div class="v-card">
+                    <div class="v-eyebrow">Portfolio Health</div>
+                    <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{report.get('portfolio_health', '')}</div>
+                </div>
+                <div class="v-card" style="border-left: 2px solid var(--red);">
+                    <div class="v-eyebrow" style="color:var(--red);">Projected Business Impact (30-90 days)</div>
+                    <div class="v-p">{report.get('projected_business_impact', '')}</div>
+                </div>
+                <div class="v-card-hero">
+                    <div class="v-eyebrow" style="color:var(--cyan);">Strategic Recommendations</div>
+                    <div class="v-value">{report.get('strategic_recommendations', '')}</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            
+            with st.expander("View Executive Intelligence Brief"):
+                st.write("**Largest Revenue Threat**\n\n" + report.get("largest_revenue_threat", ""))
+                st.write("**Risk Concentration Analysis**\n\n" + report.get("risk_concentration_analysis", ""))
+                st.write("**Emerging Trends**\n\n" + report.get("emerging_trends", ""))
+                st.write("**Resource Allocation Priorities**\n\n" + report.get("resource_allocation_priorities", ""))
 
-    # Navigation hint
-    st.markdown(
-        '<div style="font-size:.8rem;color:var(--text-muted);margin-top:.8rem">'
-        '📌 Visit <strong style="color:var(--text-p)">Agent Actions</strong> to manage, '
-        'edit, or complete saved interventions.</div>',
-        unsafe_allow_html=True,
-    )
+# ==============================================================================
+# TAB 4: INTERVENTION AGENT (Copilot)
+# ==============================================================================
+with tab4:
+    from agent.agent_runner import load_data, get_risky_customers, AVAILABLE_ACTIONS
+    from agent.gemini_client import setup_gemini_client
+    from utils.agent_worker import create_worker_state, start_worker, stop_worker, approve_current
 
-    if st.button("🔄 New Run", type="primary", use_container_width=False):
-        if "worker_state" in st.session_state:
-            del st.session_state["worker_state"]
-        if "worker_db" in st.session_state:
-            del st.session_state["worker_db"]
-        if "worker_gemini" in st.session_state:
-            del st.session_state["worker_gemini"]
+    PROCESSING_STEPS = ["Load Profile", "Analyze Signals", "Call Gemini", "Format Response"]
+
+    def _get_worker_state(): return st.session_state.get("worker_state")
+    def _is_worker_active():
+        ws = _get_worker_state()
+        return ws and (ws.get("running", False) or ws.get("phase") == "waiting_review")
+
+    def do_start_agent():
+        db = connect_to_mongo()
+        combined = load_data(db)
+        risky = get_risky_customers(combined)
+        if risky.empty:
+            st.warning("All customers are healthy.")
+            st.stop()
+        customers = [r.to_dict() for _, r in risky.iterrows()]
+        try: gemini_client = setup_gemini_client()
+        except SystemExit: st.error("GEMINI_API_KEY not found."); st.stop()
+
+        state = create_worker_state(customers, len(customers))
+        st.session_state.worker_state = state
+        st.session_state.worker_db = db
+        st.session_state.worker_gemini = gemini_client
+        start_worker(state, gemini_client, db)
         st.rerun()
+
+    def do_stop_agent():
+        ws = _get_worker_state()
+        if ws: stop_worker(ws)
+
+    def do_approve_action(action):
+        ws = _get_worker_state()
+        db = st.session_state.get("worker_db")
+        if ws and db: approve_current(ws, action, db)
+
+    ws = _get_worker_state()
+    worker_active = _is_worker_active()
+
+    if ws is None or (not worker_active and ws.get("finished") is not True):
+        st.markdown(
+            """
+            <div class="v-card" style="text-align:center; padding:3rem 2rem;">
+                <h2 style="margin-bottom:1rem; font-weight:600; letter-spacing:-0.03em;">Intervention Copilot</h2>
+                <div class="v-p" style="max-width:500px; margin:0 auto 2rem;">
+                    Runs asynchronously to analyze at-risk accounts. Reviews each account and prepares a recommended intervention for your final approval.
+                </div>
+            </div>
+            """, unsafe_allow_html=True
+        )
+        colA, colB, colC = st.columns([1,1,1])
+        with colB:
+            if st.button("Start Copilot", type="primary", use_container_width=True):
+                do_start_agent()
+
+    elif ws is not None and worker_active:
+        if ws.get("toast"):
+            st.toast(f"✅ {ws['toast']['action']} saved for {ws['toast']['customer_name']}")
+            ws["toast"] = None
+
+        phase = ws["phase"]
+        idx = ws["current_idx"]
+        total = ws["total"]
+
+        if phase in ("processing", "calling", "advance"):
+            c_obj = ws.get("current_customer", {})
+            cname = c_obj.get("company_name", "Generating Recommendation...")
+            cid = c_obj.get("customer_id", "---")
+            tier = c_obj.get("tier", "---")
+            score = c_obj.get("risk_score", 0.0)
+            
+            # Skeleton matching the final UI layout
+            st.markdown(
+                f"""
+                <div class="hero-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; padding-bottom:1rem;">
+                    <div>
+                        <div class="hero-title" style="font-size:1.5rem;">{cname}</div>
+                        <div class="hero-subtitle mono">ID: {cid} • Tier: {tier}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="mono" style="font-size:1.8rem; font-weight:600; color:var(--text-h); line-height:1;">{float(score):.1f}</div>
+                        <div style="margin-top:0.25rem;">{_badge_html(float(score))}</div>
+                    </div>
+                </div>
+                
+                <div class="v-card-hero" style="margin-top:0;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                        <div class="shimmer" style="width:120px; height:12px;"></div>
+                        <div class="shimmer" style="width:80px; height:12px;"></div>
+                    </div>
+                    <div class="shimmer" style="width:250px; height:28px; margin-bottom:1rem;"></div>
+                    <div class="shimmer" style="width:100%; height:16px; margin-bottom:0.5rem;"></div>
+                    <div class="shimmer" style="width:85%; height:16px;"></div>
+                </div>
+                
+                <div class="v-eyebrow" style="margin-bottom:0.75rem;">Select Final Action</div>
+                <div class="shimmer" style="width:150px; height:20px; margin-bottom:1rem;"></div>
+                
+                <br>
+                <div style="display:flex; gap:1rem;">
+                    <div class="shimmer" style="flex:1; height:40px; border-radius:4px;"></div>
+                    <div class="shimmer" style="flex:1; height:40px; border-radius:4px;"></div>
+                    <div class="shimmer" style="flex:1; height:40px; border-radius:4px;"></div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            
+            # Use columns to position the Stop Agent button cleanly under the skeleton
+            c1, c2, c3 = st.columns([1,1,1])
+            with c2:
+                if st.button("Stop Agent (Interrupt)", use_container_width=True):
+                    do_stop_agent(); st.rerun()
+
+            @st.fragment(run_every=2)
+            def _poll_proc():
+                _w = st.session_state.get("worker_state")
+                if _w and _w.get("phase") not in ("processing", "calling", "advance"): st.rerun()
+            _poll_proc()
+
+        elif phase == "waiting_review":
+            c = ws["current_customer"]
+            r = ws["gemini_result"]
+            
+            # Record generation time once when it enters review phase
+            ts_key_agent = f"ts_agent_run_{ws.get('current_idx')}"
+            if ts_key_agent not in st.session_state:
+                import datetime
+                st.session_state[ts_key_agent] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                
+            if c and r:
+                st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:0.5rem;'>{st.session_state[ts_key_agent]}</div>", unsafe_allow_html=True)
+                # Customer Header & Metrics
+                score = float(c.get('risk_score',0))
+                badge = _badge_html(score)
+                urgency_color = "var(--red)" if r.get('urgency') == 'High' else "var(--amber)"
+                
+                st.markdown(
+                    f"""
+                    <div class="hero-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; padding-bottom:1rem;">
+                        <div>
+                            <div class="hero-title" style="font-size:1.5rem;">{c.get('company_name')}</div>
+                            <div class="hero-subtitle mono">ID: {c.get('customer_id')} • Tier: {c.get('tier')}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="mono" style="font-size:1.8rem; font-weight:600; color:var(--text-h); line-height:1;">{score:.1f}</div>
+                            <div style="margin-top:0.25rem;">{badge}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+                
+                # Large Recommendation Card
+                primary = r.get("primary_action", "")
+                reason = r.get("likely_reason", "")
+                st.markdown(
+                    f"""
+                    <div class="v-card-hero" style="margin-top:0;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                            <div class="v-eyebrow" style="color:var(--cyan);">AI Recommendation</div>
+                            <div class="v-eyebrow" style="color:{urgency_color};">Urgency: {r.get('urgency', 'Medium')}</div>
+                        </div>
+                        <div class="v-value" style="font-size:1.8rem; margin-bottom:1rem;">{primary}</div>
+                        <div class="v-p">{reason}</div>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+                
+                # Action Selection (Wrapped in a form to prevent rerun on selection)
+                with st.form("action_selection_form", border=False):
+                    st.markdown("<div class='v-eyebrow' style='margin-bottom:0.75rem;'>Select Final Action</div>", unsafe_allow_html=True)
+                    
+                    # Format available actions
+                    action_options = []
+                    idx_to_select = 0
+                    for i, act in enumerate(AVAILABLE_ACTIONS):
+                        if act == primary:
+                            action_options.append(f"⭐ {act} (Recommended)")
+                            idx_to_select = i
+                        else:
+                            action_options.append(act)
+                            
+                    selected_val = st.radio("Select Action", action_options, index=idx_to_select, label_visibility="collapsed")
+                    # Clean the selected action from UI sugar
+                    final_action = selected_val.replace("⭐ ", "").replace(" (Recommended)", "")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    col_app, col_skip, col_stop = st.columns(3)
+                    with col_app:
+                        app_clicked = st.form_submit_button("Approve", type="primary", use_container_width=True)
+                    with col_skip:
+                        skip_clicked = st.form_submit_button("Skip", use_container_width=True)
+                    with col_stop:
+                        stop_clicked = st.form_submit_button("Stop Agent", use_container_width=True)
+                
+                # Handle form submissions outside the form block
+                if app_clicked:
+                    do_approve_action(final_action)
+                    st.rerun()
+                if skip_clicked:
+                    do_approve_action(None)
+                    st.rerun()
+                if stop_clicked:
+                    do_stop_agent()
+                    st.rerun()
+                        
+                with st.expander("View Full Analysis"):
+                    st.write("**Decay Summary:**\n\n" + r.get("decay_summary", ""))
+                    st.write("**Priority Reason:**\n\n" + r.get("priority_reason", ""))
+                    st.write("**Secondary Action:**\n\n" + r.get("secondary_action", ""))
+                    st.write("**Suggested Outreach:**\n\n" + r.get("outreach_message", ""))
+
+
+    if ws is not None and ws.get("finished") and not worker_active:
+        st.success(f"Run Complete. Analyzed {ws.get('total',0)} customers. Saved {ws.get('saved_count',0)}.")
+        if st.button("New Run", type="primary"):
+            del st.session_state["worker_state"]
+            st.rerun()

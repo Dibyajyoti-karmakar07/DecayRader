@@ -887,9 +887,9 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
             unsafe_allow_html=True,
         )
     else:
-        # Executive Summary
-        exec_sum = report.get("executive_summary") or ""
-        if exec_sum:
+        # Executive Diagnosis
+        exec_diagnosis = report.get("executive_diagnosis") or ""
+        if exec_diagnosis:
             st.markdown(
                 f"""
                 <div style="background:var(--bg-card);border:1px solid var(--border);
@@ -898,29 +898,29 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
                     <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--violet)"></div>
                     <div style="font-size:.68rem;color:var(--violet);text-transform:uppercase;
                                 letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                margin-bottom:.4rem;font-weight:600">Executive Summary</div>
-                    <div style="font-size:.9rem;color:var(--text-p);line-height:1.7">{exec_sum}</div>
+                                margin-bottom:.4rem;font-weight:600">Executive Diagnosis</div>
+                    <div style="font-size:.9rem;color:var(--text-p);line-height:1.7">{exec_diagnosis}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        # Key Risk Drivers + Likely Business Situation (two columns)
-        risk_drivers = report.get("key_risk_drivers") or ""
+        # Behavioral Changes + Likely Business Situation (two columns)
+        behavioral_changes = report.get("behavioral_changes") or ""
         biz_situation = report.get("likely_business_situation") or ""
 
-        if risk_drivers or biz_situation:
+        if behavioral_changes or biz_situation:
             r1, r2 = st.columns(2, gap="medium")
             with r1:
-                if risk_drivers:
+                if behavioral_changes:
                     st.markdown(
                         f"""
                         <div style="background:var(--bg-card);border:1px solid var(--border);
                                     border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
-                            <div style="font-size:.68rem;color:var(--red);text-transform:uppercase;
+                            <div style="font-size:.68rem;color:var(--amber);text-transform:uppercase;
                                         letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                        margin-bottom:.5rem;font-weight:600">⚠️ Key Risk Drivers</div>
-                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{risk_drivers}</div>
+                                        margin-bottom:.5rem;font-weight:600">⚠️ Behavioral Changes</div>
+                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{behavioral_changes}</div>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -931,7 +931,7 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
                         f"""
                         <div style="background:var(--bg-card);border:1px solid var(--border);
                                     border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
-                            <div style="font-size:.68rem;color:var(--amber);text-transform:uppercase;
+                            <div style="font-size:.68rem;color:var(--cyan);text-transform:uppercase;
                                         letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
                                         margin-bottom:.5rem;font-weight:600">🏢 Likely Business Situation</div>
                             <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{biz_situation}</div>
@@ -940,53 +940,17 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
                         unsafe_allow_html=True,
                     )
 
-        # Business Impact + Retention Opportunities (two columns)
-        biz_impact = report.get("potential_business_impact") or ""
-        retention = report.get("retention_opportunities") or ""
-
-        if biz_impact or retention:
-            st.markdown('<div style="margin-top:.8rem"></div>', unsafe_allow_html=True)
-            i1, i2 = st.columns(2, gap="medium")
-            with i1:
-                if biz_impact:
-                    st.markdown(
-                        f"""
-                        <div style="background:var(--bg-card);border:1px solid var(--border);
-                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
-                            <div style="font-size:.68rem;color:var(--pink);text-transform:uppercase;
-                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                        margin-bottom:.5rem;font-weight:600">💥 Potential Business Impact</div>
-                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{biz_impact}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-            with i2:
-                if retention:
-                    st.markdown(
-                        f"""
-                        <div style="background:var(--bg-card);border:1px solid var(--border);
-                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
-                            <div style="font-size:.68rem;color:var(--green);text-transform:uppercase;
-                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                        margin-bottom:.5rem;font-weight:600">🎯 Retention Opportunities</div>
-                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{retention}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-        # Recommended Next Actions
-        actions = report.get("recommended_next_actions") or ""
-        if actions:
+        # Revenue Risk Assessment (full width)
+        revenue_risk = report.get("revenue_risk_assessment") or ""
+        if revenue_risk:
             st.markdown(
                 f"""
                 <div style="background:var(--bg-card);border:1px solid var(--border);
                             border-radius:var(--r-md);padding:1.1rem 1.3rem;margin-top:.8rem">
-                    <div style="font-size:.68rem;color:var(--cyan);text-transform:uppercase;
+                    <div style="font-size:.68rem;color:var(--pink);text-transform:uppercase;
                                 letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                margin-bottom:.5rem;font-weight:600">📋 Recommended Next Actions</div>
-                    <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{actions}</div>
+                                margin-bottom:.5rem;font-weight:600">💥 Revenue Risk Assessment</div>
+                    <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{revenue_risk}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1003,39 +967,20 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
 
 # ── 9d. Executive Recommendation ──────────────────────────────────────────
 if report is not None:
-    priority = report.get("priority_level") or "—"
-    immediate = report.get("immediate_action") or "—"
+    strategy = report.get("retention_strategy") or "—"
     outcome = report.get("expected_outcome") or "—"
 
-    priority_color = {
-        "High": "var(--red)", "Medium": "var(--amber)", "Low": "var(--green)"
-    }.get(priority, "var(--text-muted)")
+    html_content = f"""
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.4rem 1.6rem;margin-top:1rem;position:relative;overflow:hidden">
+<div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient)"></div>
+<div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-family:'JetBrains Mono',monospace;margin-bottom:.8rem;font-weight:600">Executive Recommendation</div>
+<div style="display:grid;grid-template-columns:140px 1fr;gap:.6rem;align-items:start">
+<div style="font-size:.75rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em">Retention Strategy</div>
+<div style="font-size:.88rem;color:var(--text-h);line-height:1.6">{strategy}</div>
+<div style="font-size:.75rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em">Expected Outcome</div>
+<div style="font-size:.88rem;color:var(--text-p);line-height:1.6">{outcome}</div>
+</div>
+</div>
+"""
+    st.markdown(html_content, unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
-        <div style="background:var(--bg-card);border:1px solid var(--border);
-                    border-radius:var(--r-lg);padding:1.4rem 1.6rem;margin-top:1rem;
-                    position:relative;overflow:hidden">
-            <div style="position:absolute;top:0;left:0;right:0;height:3px;
-                        background:var(--gradient)"></div>
-            <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;
-                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                        margin-bottom:.8rem;font-weight:600">Executive Recommendation</div>
-
-            <div style="display:grid;grid-template-columns:140px 1fr;gap:.6rem;align-items:start">
-                <div style="font-size:.75rem;color:var(--text-muted);font-weight:500;
-                            text-transform:uppercase;letter-spacing:.04em">Priority Level</div>
-                <div style="font-size:.88rem;font-weight:700;color:{priority_color}">{priority}</div>
-
-                <div style="font-size:.75rem;color:var(--text-muted);font-weight:500;
-                            text-transform:uppercase;letter-spacing:.04em">Immediate Action</div>
-                <div style="font-size:.88rem;color:var(--text-h);line-height:1.6">{immediate}</div>
-
-                <div style="font-size:.75rem;color:var(--text-muted);font-weight:500;
-                            text-transform:uppercase;letter-spacing:.04em">Expected Outcome</div>
-                <div style="font-size:.88rem;color:var(--text-p);line-height:1.6">{outcome}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )

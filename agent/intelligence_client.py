@@ -25,39 +25,31 @@ logger = logging.getLogger(__name__)
 # =========================================================
 
 REQUIRED_OUTPUT_KEYS = [
-    "executive_summary",
-    "key_risk_drivers",
+    "executive_diagnosis",
+    "behavioral_changes",
     "likely_business_situation",
-    "potential_business_impact",
-    "retention_opportunities",
-    "recommended_next_actions",
-    "priority_level",
-    "immediate_action",
+    "revenue_risk_assessment",
+    "retention_strategy",
     "expected_outcome"
 ]
 
 PORTFOLIO_REQUIRED_OUTPUT_KEYS = [
-    "executive_summary",
-    "common_risk_patterns",
-    "top_risk_drivers",
-    "tier_distribution",
+    "portfolio_health",
+    "largest_revenue_threat",
+    "risk_concentration_analysis",
     "emerging_trends",
-    "business_impact",
-    "recommended_actions",
-    "executive_recommendation"
+    "projected_business_impact",
+    "strategic_recommendations",
+    "resource_allocation_priorities"
 ]
 
 TIER_REQUIRED_OUTPUT_KEYS = [
-    "executive_summary",
-    "customer_count",
-    "average_risk_score",
-    "risk_distribution",
-    "top_risk_drivers",
-    "highest_risk_customers",
-    "behavioral_patterns",
-    "business_impact",
-    "recommended_actions",
-    "executive_recommendation"
+    "tier_health_assessment",
+    "behavioral_pattern_analysis",
+    "healthy_vs_at_risk",
+    "primary_decay_drivers",
+    "strategic_recommendation",
+    "expected_business_impact"
 ]
 
 
@@ -115,6 +107,13 @@ def generate_customer_intelligence(cust, risk=None, intv=None) -> dict | None:
                     break
 
                 parsed = parse_gemini_json(response.text)
+
+                if not isinstance(parsed, dict):
+                    logger.warning(
+                        f"{model} returned non-dictionary JSON for "
+                        f"{cust.get('customer_id', 'UNKNOWN')} — trying next model..."
+                    )
+                    break
 
                 # Validate all required keys are present
                 missing_keys = [
@@ -187,6 +186,9 @@ def generate_portfolio_analysis(top_risk_df) -> dict | None:
     -------
     dict | None — parsed portfolio analysis report or None on failure.
     """
+    if top_risk_df is None or top_risk_df.empty:
+        logger.warning("generate_portfolio_analysis called with empty DataFrame. Aborting.")
+        return None
     try:
         client = setup_gemini_client()
     except (Exception, SystemExit):
@@ -218,6 +220,10 @@ def generate_portfolio_analysis(top_risk_df) -> dict | None:
                     break
 
                 parsed = parse_gemini_json(response.text)
+
+                if not isinstance(parsed, dict):
+                    logger.warning(f"{model} returned non-dictionary JSON for Portfolio Analysis — trying next model...")
+                    break
 
                 # Validate all required keys are present
                 missing_keys = [
@@ -272,6 +278,9 @@ def generate_tier_analysis(tier_name: str, tier_df) -> dict | None:
     -------
     dict | None — parsed tier analysis report or None on failure.
     """
+    if tier_df is None or tier_df.empty:
+        logger.warning(f"generate_tier_analysis called with empty DataFrame for {tier_name}. Aborting.")
+        return None
     try:
         client = setup_gemini_client()
     except (Exception, SystemExit):
@@ -303,6 +312,10 @@ def generate_tier_analysis(tier_name: str, tier_df) -> dict | None:
                     break
 
                 parsed = parse_gemini_json(response.text)
+
+                if not isinstance(parsed, dict):
+                    logger.warning(f"{model} returned non-dictionary JSON for Tier Analysis ({tier_name}) — trying next model...")
+                    break
 
                 # Validate all required keys are present
                 missing_keys = [

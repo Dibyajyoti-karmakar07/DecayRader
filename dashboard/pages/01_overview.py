@@ -534,138 +534,24 @@ else:
         )
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  🧠 PORTFOLIO RISK INTELLIGENCE                                            │
-# ╰──────────────────────────────────────────────────────────────────────────╯
+# │  🧠 PORTFOLIO RISK INTELLIGENCE                                          │
+# └──────────────────────────────────────────────────────────────────────────╯
 st.markdown('<div class="sec-title" style="margin-top:2rem">🧠 Portfolio Risk Intelligence</div>', unsafe_allow_html=True)
 
-if "portfolio_intel" not in st.session_state:
-    st.session_state["portfolio_intel"] = None
-
 with st.container():
-    col_desc, col_btn = st.columns([3, 1], gap="medium")
-    with col_desc:
-        st.markdown(
-            """
-            <div style="font-size:0.85rem; color:var(--text-p); line-height:1.6; margin-bottom:1rem;">
-                Generate an executive-level risk report analyzing common disengagement patterns, drivers, 
-                and expected business impact across the top 20 highest-risk customers. 
-                Runs multi-model fallback routines for reliability.
+    st.markdown(
+        """
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:2rem;text-align:center;">
+            <div style="font-size:1.1rem; color:var(--text-h); font-weight:500; margin-bottom:0.5rem;">
+                Executive Portfolio Analysis has moved.
             </div>
-            """,
-            unsafe_allow_html=True
-        )
-    with col_btn:
-        generate_clicked = st.button("Generate Portfolio Analysis", type="primary", use_container_width=True)
-
-    if generate_clicked:
-        with st.spinner("Analyzing portfolio risk patterns and generating executive directives..."):
-            try:
-                top_20 = risk_merged.nlargest(20, "risk_score")
-                report = generate_portfolio_analysis(top_20)
-                if report:
-                    st.session_state["portfolio_intel"] = report
-                    st.success("Executive Portfolio Analysis generated successfully!")
-                else:
-                    st.error("Failed to generate Portfolio Analysis. Gemini model fallback failed.")
-            except Exception as e:
-                st.error(f"An unexpected error occurred: {str(e)}")
-
-    # Render report if cached in session state
-    report = st.session_state["portfolio_intel"]
-    if report:
-        model_used = report.get("_model_used") or "Unknown"
-        st.markdown(
-            f"""
-            <div style="display:flex; justify-content:space-between; align-items:center; margin: 0.5rem 0 1rem 0; padding: 0 4px;">
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                    AI Model: <code style="font-family:'JetBrains Mono'; color:var(--cyan);">{model_used}</code>
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                    Context Scope: <strong>Top 20 At-Risk Accounts</strong>
-                </div>
+            <div style="font-size:0.9rem; color:var(--text-p); margin-bottom:1.5rem; max-width:600px; margin-left:auto; margin-right:auto;">
+                To reduce cognitive load and centralize AI operations, the Portfolio Risk Intelligence module has been fully integrated into the <b>Intelligence Workspace</b>.
             </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        col_sum, col_rec = st.columns([1.2, 1], gap="medium")
-        with col_sum:
-            st.markdown(
-                f"""
-                <div class="intel-card blue">
-                    <div class="intel-header">Executive Summary</div>
-                    <div style="font-size:0.9rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("executive_summary") or ""}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col_rec:
-            st.markdown(
-                f"""
-                <div class="intel-card red">
-                    <div class="intel-header">Executive Recommendation</div>
-                    <div style="font-size:0.9rem; color:var(--text-p); line-height:1.6; font-weight:500;">
-                        {report.get("executive_recommendation") or ""}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        col_l, col_r = st.columns(2, gap="medium")
-        with col_l:
-            st.markdown(
-                f"""
-                <div class="intel-card violet">
-                    <div class="intel-header">Common Risk Patterns</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("common_risk_patterns") or ""}
-                    </div>
-                </div>
-                <div class="intel-card amber">
-                    <div class="intel-header">Top Risk Drivers</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("top_risk_drivers") or ""}
-                    </div>
-                </div>
-                <div class="intel-card cyan">
-                    <div class="intel-header">Tier Distribution</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("tier_distribution") or ""}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col_r:
-            st.markdown(
-                f"""
-                <div class="intel-card pink">
-                    <div class="intel-header">Emerging Trends</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("emerging_trends") or ""}
-                    </div>
-                </div>
-                <div class="intel-card orange" style="position:relative; overflow:hidden;">
-                    <style>
-                        .intel-card.orange::before {{ background: #f97316; }}
-                    </style>
-                    <div class="intel-header">Business Impact Assessment</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("business_impact") or ""}
-                    </div>
-                </div>
-                <div class="intel-card green">
-                    <div class="intel-header">Recommended Portfolio Actions</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {report.get("recommended_actions") or ""}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
 # │  🧠 TIER INTELLIGENCE                                                      │
