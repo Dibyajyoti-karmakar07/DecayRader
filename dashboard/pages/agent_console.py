@@ -85,6 +85,11 @@ st.markdown(
         padding: 1.5rem;
         box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
         margin-bottom: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .v-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2);
     }
     .v-card-hero {
         background: var(--bg-surface);
@@ -94,6 +99,11 @@ st.markdown(
         padding: 2rem;
         margin: 1.5rem 0;
         box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .v-card-hero:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 28px rgba(0,0,0,0.3);
     }
     .v-eyebrow {
         font-family: 'JetBrains Mono', monospace;
@@ -137,6 +147,31 @@ st.markdown(
     .badge-green { background: rgba(80,227,194,0.1); color: var(--green); border-color: rgba(80,227,194,0.2); }
     .badge-cyan { background: rgba(0,223,216,0.1); color: var(--cyan); border-color: rgba(0,223,216,0.2); }
     .badge-neutral { background: var(--border); color: var(--text-p); border-color: var(--border-hover); }
+
+    /* Utilities & Animations */
+    @keyframes slideUpFade {
+        0% { opacity: 0; transform: translateY(6px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-entrance {
+        animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .empty-state {
+        color: var(--text-muted);
+        font-style: italic;
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+    }
+    .shimmer {
+        animation: shimmer 2s infinite linear;
+        background: linear-gradient(to right, #222 4%, #333 25%, #222 36%);
+        background-size: 1000px 100%;
+        border-radius: 4px;
+    }
 
     /* Data Tables */
     .v-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -289,31 +324,35 @@ with tab1:
                         st.session_state[ts_key] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
                     
                 if report:
-                    st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key]}</div>", unsafe_allow_html=True)
+                    def _val(k):
+                        v = report.get(k)
+                        return f'<span class="empty-state">Data unavailable</span>' if not v else v
+
+                    st.markdown(f"<div class='mono' style='font-size:0.75rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key]}</div>", unsafe_allow_html=True)
                     
                     # Executive Diagnosis & Hero Action
                     st.markdown(
                         f"""
-                        <div class="v-card">
+                        <div class="v-card animate-entrance">
                             <div class="v-eyebrow">Executive Diagnosis</div>
-                            <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{report.get('executive_diagnosis', '')}</div>
+                            <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{_val('executive_diagnosis')}</div>
                         </div>
                         
-                        <div class="v-card-hero">
+                        <div class="v-card-hero animate-entrance" style="animation-delay: 0.05s;">
                             <div class="v-eyebrow" style="color:var(--cyan);">Retention Strategy</div>
-                            <div class="v-value">{report.get('retention_strategy', 'Review account status.')}</div>
-                            <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
-                                <span class="v-eyebrow">Expected Outcome</span>
-                                <div class="v-p" style="margin-top:0.25rem;">{report.get('expected_outcome', '')}</div>
-                            </div>
+                            <div class="v-value">{_val('retention_strategy')}</div>
+                        </div>
+                        <div class="v-card animate-entrance" style="animation-delay: 0.1s;">
+                            <div class="v-eyebrow">Expected Outcome</div>
+                            <div class="v-p" style="color:var(--text-p);">{_val('expected_outcome')}</div>
                         </div>
                         """, unsafe_allow_html=True
                     )
                     
                     with st.expander("View Detailed Analysis"):
-                        st.write("**Likely Business Situation**\n\n" + report.get("likely_business_situation", "N/A"))
-                        st.write("**Behavioral Changes**\n\n" + report.get("behavioral_changes", "N/A"))
-                        st.write("**Revenue Risk Assessment**\n\n" + report.get("revenue_risk_assessment", "N/A"))
+                        st.write("**Likely Business Situation**\n\n" + _val("likely_business_situation"))
+                        st.write("**Behavioral Changes**\n\n" + _val("behavioral_changes"))
+                        st.write("**Revenue Risk Assessment**\n\n" + _val("revenue_risk_assessment"))
                 else:
                     st.error("Failed to generate report.")
 
@@ -353,29 +392,47 @@ with tab2:
                     st.session_state[ts_key_tier] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
                 
             if report:
-                st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_tier]}</div>", unsafe_allow_html=True)
+                def _val(k):
+                    v = report.get(k)
+                    return f'<span class="empty-state">Data unavailable</span>' if not v else v
+
+                st.markdown(f"<div class='mono' style='font-size:0.75rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_tier]}</div>", unsafe_allow_html=True)
                 st.markdown(
                     f"""
-                    <div class="v-card">
+                    <div class="v-card animate-entrance">
                         <div class="v-eyebrow">Tier Health Assessment</div>
-                        <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{report.get('tier_health_assessment', '')}</div>
+                        <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{_val('tier_health_assessment')}</div>
                     </div>
-                    <div class="v-card-hero">
+                    <div class="v-card-hero animate-entrance" style="animation-delay: 0.05s;">
                         <div class="v-eyebrow" style="color:var(--cyan);">Strategic Recommendation</div>
-                        <div class="v-value">{report.get('strategic_recommendation', '')}</div>
+                        <div class="v-value">{_val('strategic_recommendation')}</div>
                     </div>
                     """, unsafe_allow_html=True
                 )
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown("<div class='v-card'><div class='v-eyebrow'>Primary Decay Drivers</div><div class='v-p'>" + report.get('primary_decay_drivers', '') + "</div></div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"""
+                        <div class="v-card animate-entrance" style="animation-delay: 0.1s;">
+                            <div class="v-eyebrow">Primary Decay Drivers</div>
+                            <div class="v-p">{_val('primary_decay_drivers')}</div>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
                 with col2:
-                    st.markdown("<div class='v-card'><div class='v-eyebrow'>Expected Business Impact</div><div class='v-p'>" + report.get('expected_business_impact', '') + "</div></div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"""
+                        <div class="v-card animate-entrance" style="animation-delay: 0.15s;">
+                            <div class="v-eyebrow">Expected Business Impact</div>
+                            <div class="v-p">{_val('expected_business_impact')}</div>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
 
-                with st.expander("View Tier Diagnostics"):
-                    st.write("**Behavioral Pattern Analysis**\n\n" + report.get("behavioral_pattern_analysis", ""))
-                    st.write("**Healthy vs At-Risk Accounts**\n\n" + report.get("healthy_vs_at_risk", ""))
+                with st.expander("View Detailed Analysis"):
+                    st.write("**Behavioral Pattern Analysis**\n\n" + _val("behavioral_pattern_analysis"))
+                    st.write("**Healthy vs. At-Risk Accounts**\n\n" + _val("healthy_vs_at_risk"))
                 
                 st.markdown("<div class='v-eyebrow' style='margin-top:2rem;'>Top At-Risk Accounts</div>", unsafe_allow_html=True)
                 top_accs = tier_df.sort_values("risk_score", ascending=False).head(5)
@@ -414,20 +471,24 @@ with tab3:
                 st.session_state[ts_key_port] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
             
         if report:
-            st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_port]}</div>", unsafe_allow_html=True)
+            def _val(k):
+                v = report.get(k)
+                return f'<span class="empty-state">Data unavailable</span>' if not v else v
+
+            st.markdown(f"<div class='mono' style='font-size:0.75rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_port]}</div>", unsafe_allow_html=True)
             st.markdown(
                 f"""
-                <div class="v-card">
+                <div class="v-card animate-entrance">
                     <div class="v-eyebrow">Portfolio Health</div>
-                    <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{report.get('portfolio_health', '')}</div>
+                    <div class="v-p" style="color:var(--text-h); font-size:1.05rem;">{_val('portfolio_health')}</div>
                 </div>
-                <div class="v-card" style="border-left: 2px solid var(--red);">
-                    <div class="v-eyebrow" style="color:var(--red);">Projected Business Impact (30-90 days)</div>
-                    <div class="v-p">{report.get('projected_business_impact', '')}</div>
+                <div class="v-card animate-entrance" style="animation-delay: 0.05s;">
+                    <div class="v-eyebrow">Projected Business Impact</div>
+                    <div class="v-p">{_val('projected_business_impact')}</div>
                 </div>
-                <div class="v-card-hero">
-                    <div class="v-eyebrow" style="color:var(--cyan);">Strategic Recommendations</div>
-                    <div class="v-value">{report.get('strategic_recommendations', '')}</div>
+                <div class="v-card-hero animate-entrance" style="animation-delay: 0.1s;">
+                    <div class="v-eyebrow" style="color:var(--amber);">Strategic Recommendations</div>
+                    <div class="v-value">{_val('strategic_recommendations')}</div>
                 </div>
                 """, unsafe_allow_html=True
             )
@@ -600,7 +661,7 @@ with tab4:
                 reason = r.get("likely_reason", "")
                 st.markdown(
                     f"""
-                    <div class="v-card-hero" style="margin-top:0;">
+                    <div class="v-card-hero animate-entrance" style="margin-top:0;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
                             <div class="v-eyebrow" style="color:var(--cyan);">AI Recommendation</div>
                             <div class="v-eyebrow" style="color:{urgency_color};">Urgency: {r.get('urgency', 'Medium')}</div>

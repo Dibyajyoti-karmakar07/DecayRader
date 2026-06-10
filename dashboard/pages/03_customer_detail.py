@@ -135,6 +135,12 @@ st.markdown(
     .bp-silver    { background: rgba(161,161,161,.1); color: #a1a1a1; }
     .bp-bronze    { background: rgba(205,127,50,.12); color: #cd7f32; }
 
+    /* Utilities */
+    .empty-state {
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
     /* ── risk score cards ───────────────────────────────────────────── */
     .rs-grid {
         display: grid; grid-template-columns: repeat(3, 1fr);
@@ -887,74 +893,68 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
             unsafe_allow_html=True,
         )
     else:
+        def _val(k):
+            v = report.get(k)
+            return f'<span class="empty-state">Data unavailable</span>' if not v else v
+
         # Executive Diagnosis
-        exec_diagnosis = report.get("executive_diagnosis") or ""
-        if exec_diagnosis:
-            st.markdown(
-                f"""
-                <div style="background:var(--bg-card);border:1px solid var(--border);
-                            border-radius:var(--r-lg);padding:1.3rem 1.5rem;margin-bottom:.8rem;
-                            position:relative;overflow:hidden">
-                    <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--violet)"></div>
-                    <div style="font-size:.68rem;color:var(--violet);text-transform:uppercase;
-                                letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                margin-bottom:.4rem;font-weight:600">Executive Diagnosis</div>
-                    <div style="font-size:.9rem;color:var(--text-p);line-height:1.7">{exec_diagnosis}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f"""
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-lg);padding:1.3rem 1.5rem;margin-bottom:.8rem;
+                        position:relative;overflow:hidden">
+                <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--violet)"></div>
+                <div style="font-size:.68rem;color:var(--violet);text-transform:uppercase;
+                            letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                            margin-bottom:.4rem;font-weight:600">Executive Diagnosis</div>
+                <div style="font-size:.9rem;color:var(--text-p);line-height:1.7">{_val("executive_diagnosis")}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         # Behavioral Changes + Likely Business Situation (two columns)
-        behavioral_changes = report.get("behavioral_changes") or ""
-        biz_situation = report.get("likely_business_situation") or ""
-
-        if behavioral_changes or biz_situation:
-            r1, r2 = st.columns(2, gap="medium")
-            with r1:
-                if behavioral_changes:
-                    st.markdown(
-                        f"""
-                        <div style="background:var(--bg-card);border:1px solid var(--border);
-                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
-                            <div style="font-size:.68rem;color:var(--amber);text-transform:uppercase;
-                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                        margin-bottom:.5rem;font-weight:600">⚠️ Behavioral Changes</div>
-                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{behavioral_changes}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-            with r2:
-                if biz_situation:
-                    st.markdown(
-                        f"""
-                        <div style="background:var(--bg-card);border:1px solid var(--border);
-                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
-                            <div style="font-size:.68rem;color:var(--cyan);text-transform:uppercase;
-                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                        margin-bottom:.5rem;font-weight:600">🏢 Likely Business Situation</div>
-                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{biz_situation}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-        # Revenue Risk Assessment (full width)
-        revenue_risk = report.get("revenue_risk_assessment") or ""
-        if revenue_risk:
+        r1, r2 = st.columns(2, gap="medium")
+        with r1:
             st.markdown(
                 f"""
                 <div style="background:var(--bg-card);border:1px solid var(--border);
-                            border-radius:var(--r-md);padding:1.1rem 1.3rem;margin-top:.8rem">
-                    <div style="font-size:.68rem;color:var(--pink);text-transform:uppercase;
+                            border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
+                    <div style="font-size:.68rem;color:var(--amber);text-transform:uppercase;
                                 letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
-                                margin-bottom:.5rem;font-weight:600">💥 Revenue Risk Assessment</div>
-                    <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{revenue_risk}</div>
+                                margin-bottom:.5rem;font-weight:600">⚠️ Behavioral Changes</div>
+                    <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{_val("behavioral_changes")}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+        with r2:
+            st.markdown(
+                f"""
+                <div style="background:var(--bg-card);border:1px solid var(--border);
+                            border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
+                    <div style="font-size:.68rem;color:var(--cyan);text-transform:uppercase;
+                                letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                margin-bottom:.5rem;font-weight:600">🏢 Likely Business Situation</div>
+                    <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{_val("likely_business_situation")}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        # Revenue Risk Assessment (full width)
+        st.markdown(
+            f"""
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:1.1rem 1.3rem;margin-top:.8rem">
+                <div style="font-size:.68rem;color:var(--pink);text-transform:uppercase;
+                            letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                            margin-bottom:.5rem;font-weight:600">💥 Revenue Risk Assessment</div>
+                <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{_val("revenue_risk_assessment")}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         # Model attribution
         model_used = report.get("_model_used") or "Unknown"
@@ -967,8 +967,12 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
 
 # ── 9d. Executive Recommendation ──────────────────────────────────────────
 if report is not None:
-    strategy = report.get("retention_strategy") or "—"
-    outcome = report.get("expected_outcome") or "—"
+    def _val_rec(k):
+        v = report.get(k)
+        return f'<span class="empty-state">Data unavailable</span>' if not v else v
+
+    strategy = _val_rec("retention_strategy")
+    outcome = _val_rec("expected_outcome")
 
     html_content = f"""
 <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.4rem 1.6rem;margin-top:1rem;position:relative;overflow:hidden">

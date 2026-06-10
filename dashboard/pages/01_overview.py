@@ -614,14 +614,18 @@ with st.container():
             unsafe_allow_html=True
         )
 
+        def _val(k):
+            v = tier_report.get(k)
+            return f'<span class="empty-state">Data unavailable</span>' if not v else v
+
         col_sum, col_rec = st.columns([1.2, 1], gap="medium")
         with col_sum:
             st.markdown(
                 f"""
                 <div class="intel-card blue">
-                    <div class="intel-header">Executive Summary</div>
+                    <div class="intel-header">Tier Health Assessment</div>
                     <div style="font-size:0.9rem; color:var(--text-p); line-height:1.6;">
-                        {tier_report.get("executive_summary") or ""}
+                        {_val("tier_health_assessment")}
                     </div>
                 </div>
                 """,
@@ -631,9 +635,9 @@ with st.container():
             st.markdown(
                 f"""
                 <div class="intel-card red">
-                    <div class="intel-header">Executive Recommendation</div>
+                    <div class="intel-header">Strategic Recommendation</div>
                     <div style="font-size:0.9rem; color:var(--text-p); line-height:1.6; font-weight:500;">
-                        {tier_report.get("executive_recommendation") or ""}
+                        {_val("strategic_recommendation")}
                     </div>
                 </div>
                 """,
@@ -645,23 +649,15 @@ with st.container():
             st.markdown(
                 f"""
                 <div class="intel-card cyan">
-                    <div class="intel-header">Tier Overview & Distribution</div>
+                    <div class="intel-header">Healthy vs At-Risk Comparison</div>
                     <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        <strong>Customer Count:</strong> {tier_report.get("customer_count") or ""}<br>
-                        <strong>Average Risk Score:</strong> {tier_report.get("average_risk_score") or ""}<br>
-                        <strong>Risk Distribution:</strong> {tier_report.get("risk_distribution") or ""}
+                        {_val("healthy_vs_at_risk")}
                     </div>
                 </div>
                 <div class="intel-card amber">
-                    <div class="intel-header">Top Risk Drivers</div>
+                    <div class="intel-header">Primary Decay Drivers</div>
                     <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {tier_report.get("top_risk_drivers") or ""}
-                    </div>
-                </div>
-                <div class="intel-card violet">
-                    <div class="intel-header">Highest Risk Customers</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {tier_report.get("highest_risk_customers") or ""}
+                        {_val("primary_decay_drivers")}
                     </div>
                 </div>
                 """,
@@ -671,9 +667,9 @@ with st.container():
             st.markdown(
                 f"""
                 <div class="intel-card pink">
-                    <div class="intel-header">Behavioral Patterns</div>
+                    <div class="intel-header">Behavioral Pattern Analysis</div>
                     <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {tier_report.get("behavioral_patterns") or ""}
+                        {_val("behavioral_pattern_analysis")}
                     </div>
                 </div>
                 <div class="intel-card orange" style="position:relative; overflow:hidden;">
