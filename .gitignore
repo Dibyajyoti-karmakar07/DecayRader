@@ -216,3 +216,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Antigravity / AI assistants
+.skills/
+.claude/
+.agents/
+.qwen/
+.kilocode/
+
+# IDE
+.idea/
+
+# Your local venv name
+.venv311/
+
+# Local generated files
+skills-lock.json
