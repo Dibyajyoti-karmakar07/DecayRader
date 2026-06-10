@@ -451,7 +451,7 @@ with col_insights:
             f'</div>'
         )
     st.markdown(
-        f'<div class="ins-card"><h4>🔥 Top 5 Highest Risk</h4>{top5_rows}</div>',
+        f'<div class="ins-card"><h4>⚠️ Top 5 Highest Risk</h4>{top5_rows}</div>',
         unsafe_allow_html=True,
     )
 
@@ -472,7 +472,7 @@ with col_insights:
                 f'</div>'
             )
         st.markdown(
-            f'<div class="ins-card"><h4>📊 Avg Risk by Tier</h4>{tier_rows}</div>',
+            f'<div class="ins-card"><h4>📊 Average Risk by Tier</h4>{tier_rows}</div>',
             unsafe_allow_html=True,
         )
 
@@ -493,6 +493,6 @@ with col_insights:
             f'</div>'
         )
     st.markdown(
-        f'<div class="ins-card"><h4>📈 Risk Distribution</h4>{dist_rows}</div>',
+        f'<div class="ins-card"><h4>📉 Risk Distribution</h4>{dist_rows}</div>',
         unsafe_allow_html=True,
     )

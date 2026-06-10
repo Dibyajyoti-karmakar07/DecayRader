@@ -197,6 +197,7 @@ def approve_current(state: dict, action: str | None, db: Any) -> None:
     result = state["gemini_result"]
 
     if action and result is not None:
+        # pyrefly: ignore [unexpected-keyword]
         success = save_intervention(db, customer, result, chosen_action=action)
         if success:
             state["saved_count"] += 1

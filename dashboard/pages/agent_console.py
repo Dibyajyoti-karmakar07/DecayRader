@@ -554,20 +554,14 @@ if ws is not None and worker_active:
             stop_agent()
             st.rerun()
 
-        # Auto-refresh while waiting for Gemini to finish
-        st.html(
-            """
-            <script>
-                setTimeout(function() {
-                    window.parent.document.querySelectorAll(
-                        'button[kind="primary"]'
-                    ).forEach(function() {});
-                    // Trigger Streamlit rerun after 2 seconds
-                    window.parent.postMessage({type: "streamlit:rerun"}, "*");
-                }, 2000);
-            </script>
-            """
-        )
+        # Non-blocking auto-refresh: fragment reruns itself every 2s,
+        # then triggers a full page rerun to pick up worker state changes.
+        @st.fragment(run_every=2)
+        def _poll_worker():
+            _ws = st.session_state.get("worker_state")
+            if _ws and _ws.get("phase") not in ("processing", "calling"):
+                st.rerun()
+        _poll_worker()
 
     # ── Waiting for review (Gemini finished, human must decide) ───────────
     elif phase == "waiting_review":
@@ -622,9 +616,13 @@ if ws is not None and worker_active:
             '⏳ Loading next customer…</div></div>',
             unsafe_allow_html=True,
         )
-        import time
-        time.sleep(0.5)
-        st.rerun()
+
+        @st.fragment(run_every=1)
+        def _poll_advance():
+            _ws = st.session_state.get("worker_state")
+            if _ws and _ws.get("phase") != "advance":
+                st.rerun()
+        _poll_advance()
 
 
 # ── FINISHED STATE ──────────────────────────────────────────────────────────

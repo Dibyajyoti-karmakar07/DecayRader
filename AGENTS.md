@@ -368,6 +368,138 @@ Display:
 
 ---
 
+---
+
+# Intelligence Reports Module
+
+DecayRader includes an AI-powered Intelligence Reports layer.
+
+Purpose:
+
+Transform raw customer risk signals into executive-level business insights that are immediately understandable by account managers, customer success teams, and hackathon judges.
+
+Intelligence Reports must reuse existing data sources and existing Gemini integrations.
+
+Do not create separate agent architectures for intelligence reports.
+
+Do not create duplicate recommendation workflows.
+
+The Intelligence layer is an analytical extension of existing DecayRader functionality.
+
+---
+
+## Intelligence Report Types
+
+### Tier Intelligence
+
+Analyze customer segments by tier:
+
+* Gold
+* Silver
+* Bronze
+
+Reports may include:
+
+* Customer count
+* Average risk score
+* Risk label distribution
+* Top risk drivers
+* Highest-risk customers
+* Executive summary
+* Recommended portfolio actions
+
+Use only documented schema fields.
+
+---
+
+### Customer Deep Dive
+
+Generate a detailed business intelligence report for an individual customer.
+
+Reports may include:
+
+* Customer profile
+* Risk assessment
+* Behavioral signal analysis
+* Risk driver analysis
+* Business impact assessment
+* Retention opportunities
+* Executive recommendation
+
+The report should resemble an executive account review rather than a technical diagnostic report.
+
+---
+
+### Portfolio Risk Analysis
+
+Analyze the highest-risk customers across the portfolio.
+
+Reports may include:
+
+* Executive summary
+* Risk concentration
+* Tier breakdown
+* Common behavioral patterns
+* Emerging decay trends
+* Business impact assessment
+* Recommended intervention strategy
+
+Portfolio reports should focus on actionable business insights.
+
+---
+
+## Dashboard Placement
+
+Intelligence Reports should live inside the existing dashboard structure.
+
+Do not create new dashboard applications.
+
+Preferred pages:
+
+* 01_overview.py
+* 03_customer_detail.py
+
+Additional pages may be added only when necessary and must remain inside:
+
+dashboard/pages/
+
+---
+
+## Gemini Usage Rules
+
+Gemini should be used to generate:
+
+* Executive summaries
+* Business interpretations
+* Risk narratives
+* Portfolio insights
+
+Gemini should NOT replace:
+
+* Risk scoring
+* Feature engineering
+* Rule-based calculations
+* Anomaly detection
+
+Analytics remain deterministic.
+
+Gemini provides explanation and business context.
+
+---
+
+## Hackathon Design Goal
+
+All intelligence reports should be:
+
+* Executive-friendly
+* Business-focused
+* Concise
+* Actionable
+
+A non-technical judge should be able to understand the report within 30 seconds.
+
+Avoid technical jargon whenever possible.
+
 # Output Rules For Agents
 
 When asked to modify code:

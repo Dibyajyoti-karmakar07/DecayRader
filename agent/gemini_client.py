@@ -27,9 +27,9 @@ logger = logging.getLogger(__name__)
 # =========================================================
 
 FALLBACK_MODELS = [
-    "gemini-3.5-flash",       # Primary — 20 RPD
-    "gemini-3.1-flash-lite",  # Fallback 1 — 1000 RPD
-    "gemini-2.5-flash-lite",   # Fallback 2 — check quota
+    "gemini-3.1-flash-lite",  # Primary — 1000 RPD (reliable)
+    "gemini-2.5-flash-lite",  # Fallback 1
+    "gemini-3.5-flash",       # Fallback 2 — 20 RPD (rate limited quickly)
 ]
 
 
@@ -92,8 +92,8 @@ def call_gemini(client, customer: dict) -> dict:
 
     for model in FALLBACK_MODELS:
 
-        max_retries = 3
-        retry_delay = 5
+        max_retries = 2
+        retry_delay = 2
 
         for attempt in range(max_retries):
 
