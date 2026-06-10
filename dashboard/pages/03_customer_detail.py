@@ -11,15 +11,6 @@ import plotly.graph_objects as go
 from utils.db import connect_to_mongo
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  PAGE CONFIG                                                            │
-# ╰──────────────────────────────────────────────────────────────────────────╯
-st.set_page_config(
-    page_title="Customer Detail — DecayRader",
-    page_icon="👤",
-    layout="wide",
-)
-
-# ╭──────────────────────────────────────────────────────────────────────────╮
 # │  THEME CSS                                                              │
 # ╰──────────────────────────────────────────────────────────────────────────╯
 st.markdown(
@@ -505,7 +496,21 @@ with col_gauge:
             unsafe_allow_html=True,
         )
     else:
-        st.info("No risk score data available for this customer.")
+        st.markdown(
+            """
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:2rem;text-align:center;margin-top:1rem">
+                <div style="font-size:1.6rem;margin-bottom:.4rem">📊</div>
+                <div style="font-size:.92rem;color:var(--text-h);font-weight:600;
+                            margin-bottom:.2rem">No risk score data</div>
+                <div style="font-size:.82rem;color:var(--text-muted);line-height:1.5">
+                    Risk scores have not been computed for this customer yet.
+                    Run the data pipeline to generate scores.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
 # │  5. SIGNAL BREAKDOWN                                                    │
@@ -586,7 +591,21 @@ if _likely or _priority or _decay:
 st.markdown('<div class="sec-title">Intervention History</div>', unsafe_allow_html=True)
 
 if not has_intv:
-    st.info("No interventions recorded for this customer.")
+    st.markdown(
+        """
+        <div style="background:var(--bg-card);border:1px solid var(--border);
+                    border-radius:var(--r-md);padding:1.8rem;text-align:center;margin-top:.4rem">
+            <div style="font-size:1.6rem;margin-bottom:.4rem">📨</div>
+            <div style="font-size:.92rem;color:var(--text-h);font-weight:600;
+                        margin-bottom:.2rem">No interventions yet</div>
+            <div style="font-size:.82rem;color:var(--text-muted);line-height:1.5">
+                This customer has not been analyzed by the Agent Console.
+                Run the AI agent to generate intervention recommendations.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 else:
     rows_html = ""
     for _, r in intv_rows.iterrows():

@@ -56,44 +56,70 @@ def connect_to_mongo():
 # SAVE INTERVENTION
 # =========================================================
 
-def save_intervention(db, customer: dict, gemini_result: dict) -> bool:
+def save_intervention(
+    db,
+    customer: dict,
+    gemini_result: dict,
+    chosen_action: str | None = None,
+) -> bool:
     """
     Saves an approved intervention to the interventions collection.
 
-    Input  : db handle, customer dict, gemini_result dict
+    Input  : db handle, customer dict, gemini_result dict,
+             chosen_action (the action the human actually selected)
     Output : True if saved successfully, False if failed
     """
 
     try:
+        ai_primary   = gemini_result.get("primary_action")
+        ai_secondary = gemini_result.get("secondary_action")
+
+        # If user chose a different action than AI recommended,
+        # primary_action = user choice, secondary = AI primary.
+        # If user chose same as AI, keep AI secondary as-is.
+        if chosen_action and chosen_action != ai_primary:
+            final_primary   = chosen_action
+            final_secondary = ai_primary
+        else:
+            final_primary   = ai_primary
+            final_secondary = ai_secondary
+
+        now_utc = datetime.now(timezone.utc).isoformat()
 
         document = {
             # Customer profile
-            "customer_id"     : customer.get("customer_id"),
-            "company_name"    : customer.get("company_name"),
-            "city"            : customer.get("city"),
-            "tier"            : customer.get("tier"),
-            "account_manager" : customer.get("account_manager"),
-            "risk_score"      : customer.get("risk_score"),
-            "risk_label"      : customer.get("risk_label"),
+            "customer_id"      : customer.get("customer_id"),
+            "company_name"     : customer.get("company_name"),
+            "city"             : customer.get("city"),
+            "tier"             : customer.get("tier"),
+            "account_manager"  : customer.get("account_manager"),
+            "risk_score"       : customer.get("risk_score"),
+            "risk_label"       : customer.get("risk_label"),
 
             # Gemini reasoning
-            "decay_summary"   : gemini_result.get("decay_summary"),
-            "priority_reason" : gemini_result.get("priority_reason"),
-            "likely_reason"   : gemini_result.get("likely_reason"),
-            "primary_action"  : gemini_result.get("primary_action"),
-            "secondary_action": gemini_result.get("secondary_action"),
-            "outreach_message": gemini_result.get("outreach_message"),
-            "urgency"         : gemini_result.get("urgency"),
-            "model_used"      : gemini_result.get("model_used"),
+            "decay_summary"    : gemini_result.get("decay_summary"),
+            "priority_reason"  : gemini_result.get("priority_reason"),
+            "likely_reason"    : gemini_result.get("likely_reason"),
+            "outreach_message" : gemini_result.get("outreach_message"),
+            "urgency"          : gemini_result.get("urgency"),
+            "model_used"       : gemini_result.get("model_used"),
+
+            # Actions — what AI suggested vs what human chose
+            "ai_primary_action"  : ai_primary,
+            "ai_secondary_action": ai_secondary,
+            "chosen_action"      : chosen_action or ai_primary,
+            "primary_action"     : final_primary,
+            "secondary_action"   : final_secondary,
 
             # Metadata
-            "status"          : "pending",
-            "approved_at"     : datetime.now(timezone.utc).isoformat(),
-            "follow_up_date"  : (
+            "status"           : "pending",
+            "created_at"       : now_utc,
+            "approved_at"      : now_utc,
+            "follow_up_date"   : (
                 datetime.now(timezone.utc) + timedelta(days=14)
             ).isoformat(),
-            "completed_at"    : None,
-            "note"            : None
+            "completed_at"     : None,
+            "note"             : None
         }
 
         db["interventions"].insert_one(document)

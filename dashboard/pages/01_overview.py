@@ -11,15 +11,6 @@ import plotly.graph_objects as go
 from utils.db import connect_to_mongo
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  PAGE CONFIG                                                            │
-# ╰──────────────────────────────────────────────────────────────────────────╯
-st.set_page_config(
-    page_title="Overview — DecayRader",
-    page_icon="📊",
-    layout="wide",
-)
-
-# ╭──────────────────────────────────────────────────────────────────────────╮
 # │  THEME CSS  (mirrors app.py dark Vercel aesthetic)                      │
 # ╰──────────────────────────────────────────────────────────────────────────╯
 st.markdown(
@@ -293,7 +284,7 @@ st.markdown(
     """
     <div class="page-header">
         <h1>📊 Overview</h1>
-        <span class="sub">Business health at a glance</span>
+        <span class="sub">Real-time customer health monitoring across your entire portfolio</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -429,7 +420,24 @@ with col_bar:
 st.markdown('<div class="sec-title">Recent Interventions</div>', unsafe_allow_html=True)
 
 if interventions_df.empty:
-    st.info("No interventions recorded yet.")
+    st.markdown(
+        """
+        <div style="background:var(--bg-card);border:1px solid var(--border);
+                    border-radius:var(--r-md);padding:2rem 2.5rem;text-align:center;
+                    margin-top:.5rem">
+            <div style="font-size:2rem;margin-bottom:.6rem">💭</div>
+            <div style="font-size:.95rem;color:var(--text-h);font-weight:600;
+                        margin-bottom:.3rem">No interventions yet</div>
+            <div style="font-size:.82rem;color:var(--text-muted);line-height:1.6;
+                        max-width:420px;margin:0 auto">
+                Run the <strong style="color:var(--cyan)">Agent Console</strong>
+                to analyze at-risk customers with Gemini AI and generate
+                retention interventions.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 else:
     display_cols = ["company_name", "risk_label", "primary_action", "urgency", "status"]
     available_cols = [c for c in display_cols if c in interventions_df.columns]

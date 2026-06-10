@@ -11,15 +11,6 @@ import plotly.graph_objects as go
 from utils.db import connect_to_mongo
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │  PAGE CONFIG                                                            │
-# ╰──────────────────────────────────────────────────────────────────────────╯
-st.set_page_config(
-    page_title="Risk Ranking — DecayRader",
-    page_icon="🎯",
-    layout="wide",
-)
-
-# ╭──────────────────────────────────────────────────────────────────────────╮
 # │  THEME CSS                                                              │
 # ╰──────────────────────────────────────────────────────────────────────────╯
 st.markdown(
@@ -388,7 +379,20 @@ with col_table:
     st.markdown('<div class="sec-title">Risk Table</div>', unsafe_allow_html=True)
 
     if df.empty:
-        st.info("No customers match the current filters.")
+        st.markdown(
+            """
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:2rem;text-align:center;margin-top:.4rem">
+                <div style="font-size:1.6rem;margin-bottom:.4rem">🔍</div>
+                <div style="font-size:.92rem;color:var(--text-h);font-weight:600;
+                            margin-bottom:.2rem">No customers match your filters</div>
+                <div style="font-size:.82rem;color:var(--text-muted);line-height:1.5">
+                    Try adjusting the search term, tier, or risk label filter above.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     else:
         rows_html = ""
         for _, r in df.iterrows():
