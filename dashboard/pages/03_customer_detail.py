@@ -5,10 +5,16 @@ Customer Deep Dive — profile card, risk gauge, signal breakdown,
 risk explanation, intervention history, and executive summary.
 """
 
+import os
+import sys
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from utils.db import connect_to_mongo
+
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
 # │  THEME CSS                                                              │
@@ -706,3 +712,436 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+
+# ╭──────────────────────────────────────────────────────────────────────────╮
+# │  9. AI CUSTOMER INTELLIGENCE REPORT                                      │
+# ╰──────────────────────────────────────────────────────────────────────────╯
+
+st.markdown(
+    '<div class="sec-title" style="margin-top:2.2rem">🧠 AI Customer Intelligence Report</div>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<div style="font-size:.82rem;color:var(--text-muted);margin-bottom:.8rem">'
+    'Gemini-powered executive analysis for account managers and customer success teams.</div>',
+    unsafe_allow_html=True,
+)
+
+
+# ── 9a. Risk Assessment Summary ────────────────────────────────────────────
+if has_risk:
+    score = float(risk_row.get("risk_score", 0))
+    label = _safe(risk_row.get("risk_label"))
+    brs = float(risk_row.get("business_risk_score", 0))
+    ars = float(risk_row.get("anomaly_risk_score", 0))
+    is_anomaly = bool(risk_row.get("is_anomaly", False))
+    sc_color = _score_color(score)
+
+    st.markdown(
+        f"""
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:1rem">
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
+                <div style="font-size:1.4rem;font-weight:700;color:{sc_color};line-height:1">{score:.1f}</div>
+                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
+                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+                            letter-spacing:.06em">Risk Score</div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
+                <div style="font-size:1rem;font-weight:600;color:{_risk_color(label)};line-height:1.4">
+                    <span class="badge-pill {_risk_cls(label)}">{label}</span></div>
+                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
+                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+                            letter-spacing:.06em">Risk Label</div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
+                <div style="font-size:1.4rem;font-weight:700;color:var(--blue);line-height:1">{brs:.1f}</div>
+                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
+                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+                            letter-spacing:.06em">Business Risk</div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:1rem 1.2rem;text-align:center">
+                <div style="font-size:1.4rem;font-weight:700;color:{'var(--red)' if is_anomaly else 'var(--green)'};line-height:1">
+                    {ars:.1f}{'  ⚠️' if is_anomaly else ''}</div>
+                <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;
+                            font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+                            letter-spacing:.06em">Anomaly Risk</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ── 9b. Behavioral Signal Analysis ─────────────────────────────────────────
+if has_risk:
+    aov = float(risk_row.get("aov_change_pct", 0))
+    gap = float(risk_row.get("gap_change_pct", 0))
+    div_d = float(risk_row.get("diversity_delta", 0))
+
+    def _signal_interpretation(name: str, value: float, context: str) -> str:
+        """Generate business-language interpretation for a signal."""
+        if name == "aov_change_pct":
+            if value < -15:
+                return f"Severe spending decline ({value:+.1f}%). {context} is significantly reducing order sizes, suggesting budget cuts or competitive displacement."
+            elif value < -5:
+                return f"Moderate spending decline ({value:+.1f}%). {context} may be consolidating vendors or experiencing budget pressure."
+            elif value > 5:
+                return f"Spending is increasing ({value:+.1f}%). This is a positive signal indicating growing engagement."
+            else:
+                return f"Spending is stable ({value:+.1f}%). No significant change in average order value."
+        elif name == "gap_change_pct":
+            if value > 30:
+                return f"Critical ordering gap increase ({value:+.1f}%). {context} is ordering far less frequently — strong disengagement signal."
+            elif value > 10:
+                return f"Ordering frequency is declining ({value:+.1f}%). Time between purchases is widening."
+            elif value < -10:
+                return f"Ordering frequency is increasing ({value:+.1f}%). The customer is purchasing more often."
+            else:
+                return f"Ordering frequency is stable ({value:+.1f}%). No significant change in purchase cadence."
+        elif name == "diversity_delta":
+            if value < -1.5:
+                return f"Severe product diversity loss ({value:+.2f}). {context} has dramatically narrowed their product selection — possible consolidation or loss of use cases."
+            elif value < -0.5:
+                return f"Product diversity is declining ({value:+.2f}). The customer is buying from fewer categories."
+            elif value > 0.5:
+                return f"Product diversity is growing ({value:+.2f}). The customer is exploring more categories — healthy engagement."
+            else:
+                return f"Product mix is stable ({value:+.2f}). No significant shift in category breadth."
+        return ""
+
+    company = _safe(cust_row.get("company_name"))
+    signals_data = [
+        ("Average Order Value", "aov_change_pct", aov, "var(--red)" if aov < -5 else "var(--green)" if aov > 5 else "var(--text-muted)"),
+        ("Purchase Frequency Gap", "gap_change_pct", gap, "var(--red)" if gap > 10 else "var(--green)" if gap < -10 else "var(--text-muted)"),
+        ("Product Diversity", "diversity_delta", div_d, "var(--red)" if div_d < -0.5 else "var(--green)" if div_d > 0.5 else "var(--text-muted)"),
+    ]
+
+    with st.expander("📊 Behavioral Signal Analysis", expanded=True):
+        for sig_name, sig_field, sig_val, sig_color in signals_data:
+            interpretation = _signal_interpretation(sig_field, sig_val, company)
+            st.markdown(
+                f"""
+                <div style="background:var(--bg-card);border:1px solid var(--border);
+                            border-radius:var(--r-md);padding:1rem 1.2rem;margin-bottom:.6rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+                        <span style="font-size:.82rem;font-weight:600;color:var(--text-h)">{sig_name}</span>
+                        <span style="font-size:1rem;font-weight:700;color:{sig_color};
+                                     font-family:'JetBrains Mono',monospace">{sig_val:+.1f}{'%' if 'pct' in sig_field else ''}</span>
+                    </div>
+                    <div style="font-size:.8rem;color:var(--text-p);line-height:1.6">{interpretation}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+
+# ── 9c. AI Executive Analysis (Gemini) ────────────────────────────────────
+def _build_intelligence_prompt(
+    cust: pd.Series, risk: pd.Series | None, intv: pd.Series | None
+) -> str:
+    """Build a Gemini prompt for the customer intelligence report."""
+    company = _safe(cust.get("company_name"))
+    cid = _safe(cust.get("customer_id"))
+    tier = _safe(cust.get("tier"))
+    city = _safe(cust.get("city"))
+    acct_mgr = _safe(cust.get("account_manager"))
+
+    prompt = f"""You are a customer success intelligence analyst for a B2B distribution company.
+
+Generate an executive-level intelligence report for the following customer account.
+Write as if preparing a confidential account review for the customer success manager.
+Use business language. Avoid technical jargon. Be specific and actionable.
+
+CUSTOMER PROFILE:
+- Company: {company}
+- Customer ID: {cid}
+- Tier: {tier}
+- City: {city}
+- Account Manager: {acct_mgr}
+"""
+
+    if risk is not None:
+        prompt += f"""
+RISK ASSESSMENT:
+- Risk Score: {float(risk.get('risk_score', 0)):.1f} / 100
+- Risk Label: {_safe(risk.get('risk_label'))}
+- Business Risk Score: {float(risk.get('business_risk_score', 0)):.1f}
+- Anomaly Risk Score: {float(risk.get('anomaly_risk_score', 0)):.1f}
+- Is Anomaly: {bool(risk.get('is_anomaly', False))}
+
+BEHAVIORAL SIGNALS:
+- Average Order Value Change: {float(risk.get('aov_change_pct', 0)):+.1f}%
+- Purchase Gap Change: {float(risk.get('gap_change_pct', 0)):+.1f}%
+- Product Diversity Delta: {float(risk.get('diversity_delta', 0)):+.2f}
+"""
+
+    if intv is not None:
+        prompt += f"""
+EXISTING INTERVENTION DATA:
+- Decay Summary: {_safe(intv.get('decay_summary'), 'Not available')}
+- Priority Reason: {_safe(intv.get('priority_reason'), 'Not available')}
+- Likely Reason: {_safe(intv.get('likely_reason'), 'Not available')}
+- Primary Action: {_safe(intv.get('primary_action'), 'Not available')}
+- Secondary Action: {_safe(intv.get('secondary_action'), 'Not available')}
+- Urgency: {_safe(intv.get('urgency'), 'Not available')}
+"""
+
+    prompt += """
+Generate a JSON response with exactly these keys:
+
+{
+    "executive_summary": "2-3 sentence overview of the customer's current situation and trajectory",
+    "key_risk_drivers": "List the top 3 specific business factors driving this customer's risk score. Be concrete.",
+    "likely_business_situation": "What is probably happening inside this customer's business? Why are they disengaging?",
+    "potential_business_impact": "What revenue and relationship impact could occur if no action is taken?",
+    "retention_opportunities": "What specific opportunities exist to re-engage this customer?",
+    "recommended_next_actions": "3 specific, actionable steps the account manager should take this week",
+    "priority_level": "High, Medium, or Low",
+    "immediate_action": "The single most important thing to do right now",
+    "expected_outcome": "What should happen if the recommended actions are followed?"
+}
+
+Return ONLY valid JSON. No markdown formatting. No code fences.
+"""
+    return prompt
+
+
+def _generate_intelligence_report(
+    cust: pd.Series, risk: pd.Series | None, intv: pd.Series | None
+) -> dict | None:
+    """Call Gemini to generate a customer intelligence report."""
+    import json
+    import logging
+    from agent.gemini_client import setup_gemini_client, FALLBACK_MODELS
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        client = setup_gemini_client()
+    except (Exception, SystemExit):
+        return None
+
+    prompt = _build_intelligence_prompt(cust, risk, intv)
+
+    for model in FALLBACK_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={"temperature": 0.3},
+            )
+            if not response.text:
+                continue
+
+            raw = response.text.strip()
+            if raw.startswith("```"):
+                raw = raw.replace("```json", "").replace("```", "").strip()
+
+            parsed = json.loads(raw)
+            parsed["_model_used"] = model
+            return parsed
+
+        except Exception as e:
+            logger.warning(f"Intelligence report: {model} failed: {e}")
+            continue
+
+    return None
+
+
+# Cache key for session state
+_cache_key = f"intel_report_{selected_id}"
+
+# Generate or retrieve cached report
+with st.expander("🧠 AI Executive Analysis", expanded=True):
+    col_gen, _ = st.columns([1, 3])
+    with col_gen:
+        regenerate = st.button("🔄 Generate Report", key="gen_intel_report")
+
+    if regenerate or _cache_key not in st.session_state:
+        if has_risk or has_intv:
+            with st.spinner("Generating intelligence report with Gemini AI..."):
+                report = _generate_intelligence_report(
+                    cust_row,
+                    risk_row if has_risk else None,
+                    intv_first if has_intv else None,
+                )
+                st.session_state[_cache_key] = report
+        else:
+            st.session_state[_cache_key] = None
+
+    report = st.session_state.get(_cache_key)
+
+    if report is None:
+        st.markdown(
+            """
+            <div style="background:var(--bg-card);border:1px solid var(--border);
+                        border-radius:var(--r-md);padding:1.5rem;text-align:center">
+                <div style="font-size:1.4rem;margin-bottom:.4rem">🤖</div>
+                <div style="font-size:.92rem;color:var(--text-h);font-weight:600;
+                            margin-bottom:.2rem">Intelligence report unavailable</div>
+                <div style="font-size:.82rem;color:var(--text-muted);line-height:1.5">
+                    Gemini AI could not generate a report for this customer.
+                    Click <strong>Generate Report</strong> to retry.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        # Executive Summary
+        exec_sum = report.get("executive_summary", "")
+        if exec_sum:
+            st.markdown(
+                f"""
+                <div style="background:var(--bg-card);border:1px solid var(--border);
+                            border-radius:var(--r-lg);padding:1.3rem 1.5rem;margin-bottom:.8rem;
+                            position:relative;overflow:hidden">
+                    <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:var(--violet)"></div>
+                    <div style="font-size:.68rem;color:var(--violet);text-transform:uppercase;
+                                letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                margin-bottom:.4rem;font-weight:600">Executive Summary</div>
+                    <div style="font-size:.9rem;color:var(--text-p);line-height:1.7">{exec_sum}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        # Key Risk Drivers + Likely Business Situation (two columns)
+        risk_drivers = report.get("key_risk_drivers", "")
+        biz_situation = report.get("likely_business_situation", "")
+
+        if risk_drivers or biz_situation:
+            r1, r2 = st.columns(2, gap="medium")
+            with r1:
+                if risk_drivers:
+                    st.markdown(
+                        f"""
+                        <div style="background:var(--bg-card);border:1px solid var(--border);
+                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
+                            <div style="font-size:.68rem;color:var(--red);text-transform:uppercase;
+                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                        margin-bottom:.5rem;font-weight:600">⚠️ Key Risk Drivers</div>
+                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{risk_drivers}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+            with r2:
+                if biz_situation:
+                    st.markdown(
+                        f"""
+                        <div style="background:var(--bg-card);border:1px solid var(--border);
+                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
+                            <div style="font-size:.68rem;color:var(--amber);text-transform:uppercase;
+                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                        margin-bottom:.5rem;font-weight:600">🏢 Likely Business Situation</div>
+                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{biz_situation}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+        # Business Impact + Retention Opportunities (two columns)
+        biz_impact = report.get("potential_business_impact", "")
+        retention = report.get("retention_opportunities", "")
+
+        if biz_impact or retention:
+            st.markdown('<div style="margin-top:.8rem"></div>', unsafe_allow_html=True)
+            i1, i2 = st.columns(2, gap="medium")
+            with i1:
+                if biz_impact:
+                    st.markdown(
+                        f"""
+                        <div style="background:var(--bg-card);border:1px solid var(--border);
+                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
+                            <div style="font-size:.68rem;color:var(--pink);text-transform:uppercase;
+                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                        margin-bottom:.5rem;font-weight:600">💥 Potential Business Impact</div>
+                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{biz_impact}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+            with i2:
+                if retention:
+                    st.markdown(
+                        f"""
+                        <div style="background:var(--bg-card);border:1px solid var(--border);
+                                    border-radius:var(--r-md);padding:1.1rem 1.3rem;height:100%">
+                            <div style="font-size:.68rem;color:var(--green);text-transform:uppercase;
+                                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                        margin-bottom:.5rem;font-weight:600">🎯 Retention Opportunities</div>
+                            <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{retention}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+        # Recommended Next Actions
+        actions = report.get("recommended_next_actions", "")
+        if actions:
+            st.markdown(
+                f"""
+                <div style="background:var(--bg-card);border:1px solid var(--border);
+                            border-radius:var(--r-md);padding:1.1rem 1.3rem;margin-top:.8rem">
+                    <div style="font-size:.68rem;color:var(--cyan);text-transform:uppercase;
+                                letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                                margin-bottom:.5rem;font-weight:600">📋 Recommended Next Actions</div>
+                    <div style="font-size:.85rem;color:var(--text-p);line-height:1.7">{actions}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        # Model attribution
+        model_used = report.get("_model_used", "Unknown")
+        st.markdown(
+            f'<div style="font-size:.7rem;color:var(--text-muted);margin-top:.5rem;'
+            f'font-family:\'JetBrains Mono\',monospace">Generated by {model_used}</div>',
+            unsafe_allow_html=True,
+        )
+
+
+# ── 9d. Executive Recommendation ──────────────────────────────────────────
+if report is not None:
+    priority = report.get("priority_level", "—")
+    immediate = report.get("immediate_action", "—")
+    outcome = report.get("expected_outcome", "—")
+
+    priority_color = {
+        "High": "var(--red)", "Medium": "var(--amber)", "Low": "var(--green)"
+    }.get(priority, "var(--text-muted)")
+
+    st.markdown(
+        f"""
+        <div style="background:var(--bg-card);border:1px solid var(--border);
+                    border-radius:var(--r-lg);padding:1.4rem 1.6rem;margin-top:1rem;
+                    position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;
+                        background:var(--gradient)"></div>
+            <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;
+                        letter-spacing:.06em;font-family:'JetBrains Mono',monospace;
+                        margin-bottom:.8rem;font-weight:600">Executive Recommendation</div>
+
+            <div style="display:grid;grid-template-columns:140px 1fr;gap:.6rem;align-items:start">
+                <div style="font-size:.75rem;color:var(--text-muted);font-weight:500;
+                            text-transform:uppercase;letter-spacing:.04em">Priority Level</div>
+                <div style="font-size:.88rem;font-weight:700;color:{priority_color}">{priority}</div>
+
+                <div style="font-size:.75rem;color:var(--text-muted);font-weight:500;
+                            text-transform:uppercase;letter-spacing:.04em">Immediate Action</div>
+                <div style="font-size:.88rem;color:var(--text-h);line-height:1.6">{immediate}</div>
+
+                <div style="font-size:.75rem;color:var(--text-muted);font-weight:500;
+                            text-transform:uppercase;letter-spacing:.04em">Expected Outcome</div>
+                <div style="font-size:.88rem;color:var(--text-p);line-height:1.6">{outcome}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
