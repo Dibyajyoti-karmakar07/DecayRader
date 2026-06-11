@@ -657,15 +657,9 @@ with st.container():
                     <style>
                         .intel-card.orange::before {{ background: #f97316; }}
                     </style>
-                    <div class="intel-header">Business Impact Assessment</div>
+                    <div class="intel-header">Expected Business Impact</div>
                     <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {tier_report.get("business_impact") or ""}
-                    </div>
-                </div>
-                <div class="intel-card green">
-                    <div class="intel-header">Recommended Actions</div>
-                    <div style="font-size:0.88rem; color:var(--text-p); line-height:1.6;">
-                        {tier_report.get("recommended_actions") or ""}
+                        {_val("expected_business_impact")}
                     </div>
                 </div>
                 """,
