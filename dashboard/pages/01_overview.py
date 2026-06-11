@@ -569,7 +569,7 @@ with st.container():
                 if tier_df.empty:
                     st.warning(f"No customer data found for Tier: {selected_tier}.")
                 else:
-                    report = generate_tier_analysis(selected_tier, tier_df)
+                    report = generate_tier_analysis(selected_tier)
                     if report:
                         st.session_state[tier_cache_key] = report
                         st.success(f"{selected_tier} Tier Intelligence generated successfully!")
