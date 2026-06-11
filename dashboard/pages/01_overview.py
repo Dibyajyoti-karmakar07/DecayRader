@@ -331,8 +331,8 @@ else:
 st.markdown(
     """
     <div class="page-header">
-        <h1>📊 Overview</h1>
-        <span class="sub">Real-time customer health monitoring across your entire portfolio</span>
+        <h1>📊 Portfolio Overview</h1>
+        <div class="page-sub">Monitor fleet-wide health, identify decay trends, and track AI-driven retention strategies to prevent revenue loss before it happens.</div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -533,25 +533,7 @@ else:
             unsafe_allow_html=True,
         )
 
-# ╭──────────────────────────────────────────────────────────────────────────╮
-# │  🧠 PORTFOLIO RISK INTELLIGENCE                                          │
-# └──────────────────────────────────────────────────────────────────────────╯
-st.markdown('<div class="sec-title" style="margin-top:2rem">🧠 Portfolio Risk Intelligence</div>', unsafe_allow_html=True)
 
-with st.container():
-    st.markdown(
-        """
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:2rem;text-align:center;">
-            <div style="font-size:1.1rem; color:var(--text-h); font-weight:500; margin-bottom:0.5rem;">
-                Executive Portfolio Analysis has moved.
-            </div>
-            <div style="font-size:0.9rem; color:var(--text-p); margin-bottom:1.5rem; max-width:600px; margin-left:auto; margin-right:auto;">
-                To reduce cognitive load and centralize AI operations, the Portfolio Risk Intelligence module has been fully integrated into the <b>Intelligence Workspace</b>.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
 # │  🧠 TIER INTELLIGENCE                                                      │
@@ -599,16 +581,15 @@ with st.container():
     # Render tier report if cached in session state
     tier_report = st.session_state[tier_cache_key]
     if tier_report:
-        model_used = tier_report.get("_model_used") or "Unknown"
+        import datetime
+        now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
         st.markdown(
             f"""
-            <div style="display:flex; justify-content:space-between; align-items:center; margin: 0.5rem 0 1rem 0; padding: 0 4px;">
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                    AI Model: <code style="font-family:'JetBrains Mono'; color:var(--cyan);">{model_used}</code>
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                    Context Scope: <strong>{selected_tier} Tier Customer Base</strong>
-                </div>
+            <div style="display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center; margin: 0.5rem 0 1rem 0; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
+                <span>⚡ AI Generated Report</span>
+                <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
+                <span>🔌 MongoDB MCP Server</span>
+                <span>⏱️ {{now_ts}}</span>
             </div>
             """,
             unsafe_allow_html=True

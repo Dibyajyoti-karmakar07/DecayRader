@@ -355,20 +355,14 @@ def _safe(val, fallback: str = "—") -> str:
 
 
 def _sort_pending(df: pd.DataFrame) -> pd.DataFrame:
-    """Sort pending: highest urgency first, then newest first."""
+    """Sort pending: newest first."""
     if df.empty:
         return df
     df = df.copy()
-    if "urgency" in df.columns:
-        df["_urg_rank"] = df["urgency"].str.strip().str.lower().map(URGENCY_SORT).fillna(9)
-    else:
-        df["_urg_rank"] = 9
     sort_col = "created_at" if "created_at" in df.columns else "approved_at"
     if sort_col in df.columns:
-        df = df.sort_values(["_urg_rank", sort_col], ascending=[True, False])
-    else:
-        df = df.sort_values("_urg_rank", ascending=True)
-    return df.drop(columns=["_urg_rank"]).reset_index(drop=True)
+        df = df.sort_values(sort_col, ascending=False)
+    return df.reset_index(drop=True)
 
 
 def _sort_newest(df: pd.DataFrame) -> pd.DataFrame:
@@ -396,9 +390,9 @@ except Exception as exc:
 st.markdown(
     """
     <div class="page-header">
-        <h1>🤖 Agent Actions</h1>
+        <h1>📋 Action Tracker</h1>
         <div class="page-sub">
-            Manage AI-generated interventions — review, approve, edit, and track retention actions.
+            Track, manage, and complete AI-recommended retention actions.
         </div>
     </div>
     """,

@@ -295,8 +295,7 @@ st.markdown(
     <div class="page-header">
         <h1>🎯 Customer Risk Ranking</h1>
         <div class="page-sub">
-            Customers ranked by composite decay-risk score — higher scores
-            indicate stronger signals of disengagement.
+            Identify at-risk accounts before they churn. Higher composite scores indicate stronger behavioral decay signals.
         </div>
     </div>
     """,

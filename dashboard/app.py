@@ -148,7 +148,7 @@ risk_ranking = st.Page("pages/02_risk_ranking.py", title="Risk Ranking", icon="�
 customer_detail = st.Page("pages/03_customer_detail.py", title="Customer Detail", icon="👤")
 time_machine = st.Page("pages/04_time_machine.py", title="Time Machine", icon="⏳")
 agent_console = st.Page("pages/agent_console.py", title="Agent Console", icon="🤖", default=True)
-agent_actions = st.Page("pages/05_agent_actions.py", title="Agent Actions", icon="📋")
+agent_actions = st.Page("pages/05_agent_actions.py", title="Action Tracker", icon="📋")
 
 pg = st.navigation(
     {

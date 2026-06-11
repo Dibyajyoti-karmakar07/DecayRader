@@ -305,7 +305,7 @@ st.markdown(
     """
     <div class="page-header">
         <h1>⏳ Time Machine</h1>
-        <div class="page-sub">Visualize customer decay before traditional business detection.</div>
+        <div class="page-sub">Demonstrate how behavioral decay algorithms detect risk earlier than traditional metrics.</div>
     </div>
     """,
     unsafe_allow_html=True,

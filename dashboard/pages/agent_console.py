@@ -311,7 +311,7 @@ with tab1:
                     """, unsafe_allow_html=True
                 )
                 
-                with st.spinner("Generating deep dive..."):
+                with st.spinner("Generating deep dive intelligence..."):
                     report = generate_customer_intelligence(cid)
                     if ts_key not in st.session_state:
                         import datetime
@@ -322,7 +322,19 @@ with tab1:
                         v = report.get(k)
                         return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
-                    st.markdown(f"<div class='mono' style='font-size:0.75rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key]}</div>", unsafe_allow_html=True)
+                    import datetime
+                    now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+                    st.markdown(
+                        f"""
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
+                            <span>⚡ AI Generated Report</span>
+                            <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
+                            <span>🔌 MongoDB MCP Server</span>
+                            <span>⏱️ {{now_ts}}</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
                     
                     # Executive Diagnosis & Hero Action
                     st.markdown(
@@ -379,7 +391,7 @@ with tab2:
                 """, unsafe_allow_html=True
             )
             
-            with st.spinner(f"Analyzing {selected_tier} tier..."):
+            with st.spinner(f"Analyzing {selected_tier} tier intelligence..."):
                 report = generate_tier_analysis(selected_tier)
                 if ts_key_tier not in st.session_state:
                     import datetime
@@ -390,7 +402,19 @@ with tab2:
                     v = report.get(k)
                     return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
-                st.markdown(f"<div class='mono' style='font-size:0.75rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_tier]}</div>", unsafe_allow_html=True)
+                import datetime
+                now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+                st.markdown(
+                    f"""
+                    <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
+                        <span>⚡ AI Generated Report</span>
+                        <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
+                        <span>🔌 MongoDB MCP Server</span>
+                        <span>⏱️ {{now_ts}}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
                 st.markdown(
                     f"""
                     <div class="v-card animate-entrance">
@@ -457,7 +481,7 @@ with tab3:
             """, unsafe_allow_html=True
         )
         
-        with st.spinner("Analyzing portfolio risk..."):
+        with st.spinner("Analyzing portfolio intelligence..."):
             report = generate_portfolio_analysis()
             if ts_key_port not in st.session_state:
                 import datetime
@@ -468,7 +492,19 @@ with tab3:
                 v = report.get(k)
                 return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
-            st.markdown(f"<div class='mono' style='font-size:0.75rem; color:var(--text-muted); text-align:right; margin-bottom:1rem;'>{st.session_state[ts_key_port]}</div>", unsafe_allow_html=True)
+            import datetime
+            now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+            st.markdown(
+                f"""
+                <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
+                    <span>⚡ AI Generated Report</span>
+                    <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
+                    <span>🔌 MongoDB MCP Server</span>
+                    <span>⏱️ {{now_ts}}</span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
             st.markdown(
                 f"""
                 <div class="v-card animate-entrance">
@@ -541,9 +577,10 @@ with tab4:
         st.markdown(
             """
             <div class="v-card" style="text-align:center; padding:3rem 2rem;">
-                <h2 style="margin-bottom:1rem; font-weight:600; letter-spacing:-0.03em;">Intervention Copilot</h2>
-                <div class="v-p" style="max-width:500px; margin:0 auto 2rem;">
-                    Runs asynchronously to analyze at-risk accounts. Reviews each account and prepares a recommended intervention for your final approval.
+                <h2 style="margin-bottom:1rem; font-weight:600; letter-spacing:-0.03em;">🤖 Intervention Copilot</h2>
+                <div class="v-p" style="max-width:550px; margin:0 auto 2rem; color:var(--text-p); line-height:1.6;">
+                    The Copilot runs autonomously in the background to analyze all at-risk accounts. 
+                    It evaluates behavioral signals and compiles recommended interventions for your final review and approval.
                 </div>
             </div>
             """, unsafe_allow_html=True
