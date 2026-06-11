@@ -312,13 +312,7 @@ with tab1:
                 )
                 
                 with st.spinner("Generating deep dive..."):
-                    intv_row = None
-                    if not intv_df.empty:
-                        cust_intvs = intv_df[intv_df["customer_id"] == cid]
-                        if not cust_intvs.empty:
-                            intv_row = cust_intvs.iloc[0]
-                    
-                    report = generate_customer_intelligence(row, row, intv_row)
+                    report = generate_customer_intelligence(cid)
                     if ts_key not in st.session_state:
                         import datetime
                         st.session_state[ts_key] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
@@ -386,7 +380,7 @@ with tab2:
             )
             
             with st.spinner(f"Analyzing {selected_tier} tier..."):
-                report = generate_tier_analysis(selected_tier, tier_df)
+                report = generate_tier_analysis(selected_tier)
                 if ts_key_tier not in st.session_state:
                     import datetime
                     st.session_state[ts_key_tier] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
@@ -464,8 +458,7 @@ with tab3:
         )
         
         with st.spinner("Analyzing portfolio risk..."):
-            top_risk_df = merged_df[merged_df["risk_score"] > 50]
-            report = generate_portfolio_analysis(top_risk_df)
+            report = generate_portfolio_analysis()
             if ts_key_port not in st.session_state:
                 import datetime
                 st.session_state[ts_key_port] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
