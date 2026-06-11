@@ -197,10 +197,13 @@ def approve_current(state: dict, action: str | None, db: Any) -> None:
     result = state["gemini_result"]
 
     if action and result is not None:
-        # pyrefly: ignore [unexpected-keyword]
-        success = save_intervention(db, customer, result, chosen_action=action)
-        if success:
-            state["saved_count"] += 1
+        try:
+            logger.info(f"Attempting to approve intervention '{action}' for customer {customer.get('customer_id')}")
+            # pyrefly: ignore [unexpected-keyword]
+            success = save_intervention(db, customer, result, chosen_action=action)
+            if success:
+                logger.info(f"Successfully saved intervention for customer {customer.get('customer_id')}")
+                state["saved_count"] += 1
             state["logs"].append(
                 f"✅ {customer.get('company_name')} ({customer.get('customer_id')}) — {action}"
             )
@@ -208,7 +211,12 @@ def approve_current(state: dict, action: str | None, db: Any) -> None:
                 "action": action,
                 "customer_name": customer.get("company_name", ""),
             }
-        else:
+        except Exception as e:
+            logger.error(f"Error saving intervention for {customer.get('customer_id')}: {e}")
+            success = False
+
+        if not success:
+            logger.warning(f"Failed to save intervention for customer {customer.get('customer_id')}")
             state["failed_count"] += 1
             state["logs"].append(
                 f"⚠️ {customer.get('company_name')} ({customer.get('customer_id')}) — failed to save"

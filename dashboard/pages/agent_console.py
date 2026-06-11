@@ -532,7 +532,7 @@ with tab4:
     def do_approve_action(action):
         ws = _get_worker_state()
         db = st.session_state.get("worker_db")
-        if ws and db: approve_current(ws, action, db)
+        if ws is not None and db is not None: approve_current(ws, action, db)
 
     ws = _get_worker_state()
     worker_active = _is_worker_active()

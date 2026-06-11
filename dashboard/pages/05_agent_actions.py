@@ -268,15 +268,20 @@ def load_interventions() -> pd.DataFrame:
 
 def _update_intervention(doc_id: str, updates: dict) -> bool:
     """Update a single intervention by _id. Always stamps updated_at."""
+    import logging
+    logger = logging.getLogger(__name__)
     try:
+        logger.info(f"Attempting to update intervention {doc_id} with {updates.keys()}")
         updates["updated_at"] = _now_utc()
         db = _get_db()
         db["interventions"].update_one(
             {"_id": ObjectId(doc_id)},
             {"$set": updates},
         )
+        logger.info(f"Successfully updated intervention {doc_id}")
         return True
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error updating intervention {doc_id}: {e}")
         return False
 
 
