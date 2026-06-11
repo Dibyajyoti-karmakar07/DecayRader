@@ -25,7 +25,12 @@ def run_mcp_agent_sync(prompt: str, model_name="gemini-3.1-flash-lite"):
         logger.error("MCP Agent Timeout: Generation took longer than 45 seconds.")
         return "⚠️ The agent took too long to respond (timeout). Please try again or simplify your request."
     except Exception as e:
-        logger.error(f"MCP Agent Sync Error: {e}")
+        # If it's an ExceptionGroup, format it nicely
+        if hasattr(e, 'exceptions'):
+            err_msg = ", ".join(str(ex) for ex in e.exceptions)
+            logger.error(f"MCP Agent Sync ExceptionGroup: {err_msg}")
+        else:
+            logger.error(f"MCP Agent Sync Error: {e}")
         return "⚠️ An unexpected error occurred while gathering intelligence. Please try again."
 
 
@@ -39,10 +44,35 @@ async def run_mcp_agent(prompt: str, model_name="gemini-3.1-flash-lite"):
     # Hackathon fix: Streamlit Cloud permission workaround for npx cache
     safe_env = os.environ.copy()
     safe_env["npm_config_cache"] = "/tmp/.npm"
+    safe_env["npm_config_loglevel"] = "error" # Suppress npm WARN output
+    safe_env["npm_config_yes"] = "true"
     
+    # Force Node 22 and use the official, updated package name to avoid 
+    # crashes caused by Streamlit Cloud's default Node 18 runtime.
+    command_args = [
+        "-y", 
+        "-p", "node@22", 
+        "-p", "@modelcontextprotocol/server-mongodb", 
+        "mcp-server-mongodb"
+    ]
+    
+    # Pre-warm the npx cache to prevent session.initialize() from timing out 
+    # while waiting for the massive download on a cold start container.
+    try:
+        logger.info("Pre-warming npx cache...")
+        proc = await asyncio.create_subprocess_exec(
+            "npx", *(command_args + ["--help"]),
+            env=safe_env,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        await asyncio.wait_for(proc.communicate(), timeout=60.0)
+    except Exception as e:
+        logger.warning(f"Pre-warm failed or timed out: {e}")
+
     server_params = StdioServerParameters(
         command="npx",
-        args=["-y", "mongodb-mcp-server", uri],
+        args=command_args + [uri],
         env=safe_env
     )
     
