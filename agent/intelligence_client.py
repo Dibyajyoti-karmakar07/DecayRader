@@ -49,6 +49,9 @@ TIER_REQUIRED_OUTPUT_KEYS = [
     "expected_business_impact"
 ]
 
+import streamlit as st
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def generate_customer_intelligence(customer_id: str) -> dict | None:
     """Generate an AI Customer Intelligence Report via Gemini + MCP Tools."""
     prompt = build_intelligence_prompt(customer_id)
@@ -73,6 +76,7 @@ def generate_customer_intelligence(customer_id: str) -> dict | None:
     return parsed
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def generate_portfolio_analysis() -> dict | None:
     """Generate an AI Portfolio Risk Analysis Report via Gemini + MCP Tools."""
     prompt = build_portfolio_analysis_prompt()
@@ -97,6 +101,7 @@ def generate_portfolio_analysis() -> dict | None:
     return parsed
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def generate_tier_analysis(tier_name: str) -> dict | None:
     """Generate an AI Tier Intelligence Report via Gemini + MCP Tools."""
     prompt = build_tier_analysis_prompt(tier_name)
