@@ -17,7 +17,16 @@ def run_mcp_agent_sync(prompt: str, model_name="gemini-3.1-flash-lite"):
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    return loop.run_until_complete(run_mcp_agent(prompt, model_name))
+        
+    try:
+        # Hackathon fix: Prevent indefinite hangs with a 45-second timeout
+        return loop.run_until_complete(asyncio.wait_for(run_mcp_agent(prompt, model_name), timeout=45.0))
+    except asyncio.TimeoutError:
+        logger.error("MCP Agent Timeout: Generation took longer than 45 seconds.")
+        return "⚠️ The agent took too long to respond (timeout). Please try again or simplify your request."
+    except Exception as e:
+        logger.error(f"MCP Agent Sync Error: {e}")
+        return "⚠️ An unexpected error occurred while gathering intelligence. Please try again."
 
 
 async def run_mcp_agent(prompt: str, model_name="gemini-3.1-flash-lite"):
@@ -27,10 +36,14 @@ async def run_mcp_agent(prompt: str, model_name="gemini-3.1-flash-lite"):
         logger.error("MONGODB_URI not set")
         return None
         
+    # Hackathon fix: Streamlit Cloud permission workaround for npx cache
+    safe_env = os.environ.copy()
+    safe_env["npm_config_cache"] = "/tmp/.npm"
+    
     server_params = StdioServerParameters(
         command="npx",
         args=["-y", "mongodb-mcp-server", uri],
-        env=os.environ.copy()
+        env=safe_env
     )
     
     api_key = os.getenv("GEMINI_API_KEY")

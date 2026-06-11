@@ -558,25 +558,26 @@ with ins_c3:
 # ╰──────────────────────────────────────────────────────────────────────────╯
 st.markdown('---')
 
-if not df_all.empty:
-    col_clr, _ = st.columns([1, 4])
-    with col_clr:
-        if st.button("🗑️ Clear All", type="secondary", use_container_width=True):
-            st.session_state["confirm_clear_all"] = True
-
-if st.session_state.get("confirm_clear_all"):
-    st.warning("⚠️ This will permanently delete **all** intervention records.")
-    c_yes, c_no, _ = st.columns([1, 1, 4])
-    with c_yes:
-        if st.button("✅ Confirm", type="primary", use_container_width=True):
-            deleted = _clear_all_interventions()
-            st.session_state["confirm_clear_all"] = False
-            st.toast(f"🗑️ Deleted {deleted} records.")
-            _reload_and_rerun()
-    with c_no:
-        if st.button("❌ Cancel", use_container_width=True):
-            st.session_state["confirm_clear_all"] = False
-            st.rerun()
+# HACKATHON FIX: Disabled 'Clear All' to prevent accidental data wipes
+# if not df_all.empty:
+#     col_clr, _ = st.columns([1, 4])
+#     with col_clr:
+#         if st.button("🗑️ Clear All", type="secondary", use_container_width=True):
+#             st.session_state["confirm_clear_all"] = True
+#
+# if st.session_state.get("confirm_clear_all"):
+#     st.warning("⚠️ This will permanently delete **all** intervention records.")
+#     c_yes, c_no, _ = st.columns([1, 1, 4])
+#     with c_yes:
+#         if st.button("✅ Confirm", type="primary", use_container_width=True):
+#             deleted = _clear_all_interventions()
+#             st.session_state["confirm_clear_all"] = False
+#             st.toast(f"🗑️ Deleted {deleted} records.")
+#             _reload_and_rerun()
+#     with c_no:
+#         if st.button("❌ Cancel", use_container_width=True):
+#             st.session_state["confirm_clear_all"] = False
+#             st.rerun()
 
 
 # ╭──────────────────────────────────────────────────────────────────────────╮
