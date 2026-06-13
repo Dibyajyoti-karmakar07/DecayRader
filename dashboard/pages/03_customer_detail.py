@@ -873,15 +873,19 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
     report = st.session_state.get(_cache_key)
 
     if report is not None:
-        import datetime
-        now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        import uuid
+        now_ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y · %H:%M IST")
+        ref_id = f"AX-{uuid.uuid4().hex[:4].upper()}"
         st.markdown(
             f"""
             <div style="display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center; margin: 0.5rem 0 1.5rem 0; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                 <span>⚡ AI Generated Report</span>
                 <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                 <span>🔌 MongoDB MCP Server</span>
-                <span>⏱️ {now_ts}</span>
+                <span>📄 Ref: {ref_id}</span>
+                <span>📅 Generated: {now_ts}</span>
             </div>
             """,
             unsafe_allow_html=True

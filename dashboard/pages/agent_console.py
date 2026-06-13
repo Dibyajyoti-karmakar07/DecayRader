@@ -314,23 +314,28 @@ with tab1:
                 with st.spinner("Generating deep dive intelligence..."):
                     report = generate_customer_intelligence(cid)
                     if ts_key not in st.session_state:
-                        import datetime
-                        st.session_state[ts_key] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
+                        from datetime import datetime
+                        from zoneinfo import ZoneInfo
+                        st.session_state[ts_key] = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("📅 Generated: %d %b %Y · %H:%M IST")
                     
                 if report:
                     def _val(k):
                         v = report.get(k)
                         return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
-                    import datetime
-                    now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
+                    from datetime import datetime
+                    from zoneinfo import ZoneInfo
+                    import uuid
+                    now_ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y · %H:%M IST")
+                    ref_id = f"AX-{uuid.uuid4().hex[:4].upper()}"
                     st.markdown(
                         f"""
                         <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                             <span>⚡ AI Generated Report</span>
                             <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                             <span>🔌 MongoDB MCP Server</span>
-                            <span>⏱️ {now_ts}</span>
+                            <span>📄 Ref: {ref_id}</span>
+                            <span>📅 Generated: {now_ts}</span>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -394,23 +399,28 @@ with tab2:
             with st.spinner(f"Analyzing {selected_tier} tier intelligence..."):
                 report = generate_tier_analysis(selected_tier)
                 if ts_key_tier not in st.session_state:
-                    import datetime
-                    st.session_state[ts_key_tier] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
+                    from datetime import datetime
+                    from zoneinfo import ZoneInfo
+                    st.session_state[ts_key_tier] = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("📅 Generated: %d %b %Y · %H:%M IST")
                 
             if report:
                 def _val(k):
                     v = report.get(k)
                     return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
-                import datetime
-                now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
+                from datetime import datetime
+                from zoneinfo import ZoneInfo
+                import uuid
+                now_ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y · %H:%M IST")
+                ref_id = f"AX-{uuid.uuid4().hex[:4].upper()}"
                 st.markdown(
                     f"""
                     <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                         <span>⚡ AI Generated Report</span>
                         <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                         <span>🔌 MongoDB MCP Server</span>
-                        <span>⏱️ {now_ts}</span>
+                        <span>📄 Ref: {ref_id}</span>
+                        <span>📅 Generated: {now_ts}</span>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -484,23 +494,28 @@ with tab3:
         with st.spinner("Analyzing portfolio intelligence..."):
             report = generate_portfolio_analysis()
             if ts_key_port not in st.session_state:
-                import datetime
-                st.session_state[ts_key_port] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
+                from datetime import datetime
+                from zoneinfo import ZoneInfo
+                st.session_state[ts_key_port] = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("📅 Generated: %d %b %Y · %H:%M IST")
             
         if report:
             def _val(k):
                 v = report.get(k)
                 return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
-            import datetime
-            now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+            import uuid
+            now_ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y · %H:%M IST")
+            ref_id = f"AX-{uuid.uuid4().hex[:4].upper()}"
             st.markdown(
                 f"""
                 <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                     <span>⚡ AI Generated Report</span>
                     <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                     <span>🔌 MongoDB MCP Server</span>
-                    <span>⏱️ {now_ts}</span>
+                    <span>📄 Ref: {ref_id}</span>
+                    <span>📅 Generated: {now_ts}</span>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -661,8 +676,9 @@ with tab4:
             # Record generation time once when it enters review phase
             ts_key_agent = f"ts_agent_run_{ws.get('current_idx')}"
             if ts_key_agent not in st.session_state:
-                import datetime
-                st.session_state[ts_key_agent] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
+                from datetime import datetime
+                from zoneinfo import ZoneInfo
+                st.session_state[ts_key_agent] = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("📅 Generated: %d %b %Y · %H:%M IST")
                 
             if c and r:
                 st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:0.5rem;'>{st.session_state[ts_key_agent]}</div>", unsafe_allow_html=True)
