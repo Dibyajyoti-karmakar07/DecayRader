@@ -315,7 +315,7 @@ with tab1:
                     report = generate_customer_intelligence(cid)
                     if ts_key not in st.session_state:
                         import datetime
-                        st.session_state[ts_key] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                        st.session_state[ts_key] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
                     
                 if report:
                     def _val(k):
@@ -323,14 +323,14 @@ with tab1:
                         return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
                     import datetime
-                    now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+                    now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
                     st.markdown(
                         f"""
                         <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                             <span>⚡ AI Generated Report</span>
                             <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                             <span>🔌 MongoDB MCP Server</span>
-                            <span>⏱️ {{now_ts}}</span>
+                            <span>⏱️ {now_ts}</span>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -395,7 +395,7 @@ with tab2:
                 report = generate_tier_analysis(selected_tier)
                 if ts_key_tier not in st.session_state:
                     import datetime
-                    st.session_state[ts_key_tier] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                    st.session_state[ts_key_tier] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
                 
             if report:
                 def _val(k):
@@ -403,14 +403,14 @@ with tab2:
                     return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
                 import datetime
-                now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+                now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
                 st.markdown(
                     f"""
                     <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                         <span>⚡ AI Generated Report</span>
                         <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                         <span>🔌 MongoDB MCP Server</span>
-                        <span>⏱️ {{now_ts}}</span>
+                        <span>⏱️ {now_ts}</span>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -485,7 +485,7 @@ with tab3:
             report = generate_portfolio_analysis()
             if ts_key_port not in st.session_state:
                 import datetime
-                st.session_state[ts_key_port] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                st.session_state[ts_key_port] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
             
         if report:
             def _val(k):
@@ -493,14 +493,14 @@ with tab3:
                 return f'<span class="empty-state">Data unavailable</span>' if not v else v
 
             import datetime
-            now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+            now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
             st.markdown(
                 f"""
                 <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:1.5rem; align-items:center; margin-bottom:1rem; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                     <span>⚡ AI Generated Report</span>
                     <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                     <span>🔌 MongoDB MCP Server</span>
-                    <span>⏱️ {{now_ts}}</span>
+                    <span>⏱️ {now_ts}</span>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -662,7 +662,7 @@ with tab4:
             ts_key_agent = f"ts_agent_run_{ws.get('current_idx')}"
             if ts_key_agent not in st.session_state:
                 import datetime
-                st.session_state[ts_key_agent] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y &middot; %H:%M %Z")
+                st.session_state[ts_key_agent] = datetime.datetime.now().astimezone().strftime("Generated: %d %b %Y · %H:%M %Z")
                 
             if c and r:
                 st.markdown(f"<div class='mono' style='font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:0.5rem;'>{st.session_state[ts_key_agent]}</div>", unsafe_allow_html=True)

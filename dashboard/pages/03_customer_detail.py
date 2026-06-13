@@ -874,14 +874,14 @@ with st.expander("🧠 AI Executive Analysis", expanded=True):
 
     if report is not None:
         import datetime
-        now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y &middot; %H:%M %Z")
+        now_ts = datetime.datetime.now().astimezone().strftime("%d %b %Y · %H:%M %Z")
         st.markdown(
             f"""
             <div style="display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center; margin: 0.5rem 0 1.5rem 0; padding: 0 4px; font-size:0.75rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;">
                 <span>⚡ AI Generated Report</span>
                 <span>🧠 Powered by Gemini 3.1 Flash Lite</span>
                 <span>🔌 MongoDB MCP Server</span>
-                <span>⏱️ {{now_ts}}</span>
+                <span>⏱️ {now_ts}</span>
             </div>
             """,
             unsafe_allow_html=True
